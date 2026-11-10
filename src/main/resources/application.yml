@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: task-by-task
+  config:
+    import:
+      - optional:file:.env[.properties]
+      - optional:classpath:application-local.yml
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/postgres}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    schemas: public
+    locations: classpath:db/migration
+  session:
+    store-type: jdbc
+    timeout: 7d
+    jdbc:
+      initialize-schema: never
+
+server:
+  servlet:
+    session:
+      timeout: 7d
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: true
+
+db-scheduler:
+  enabled: true
+  table-name: scheduled_tasks
+
+logging:
+  level:
+    root: INFO
+    com.eyelesscode.task_by_task: DEBUG
+    org.springframework.security: INFO

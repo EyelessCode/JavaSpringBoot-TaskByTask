@@ -1,13 +1,10 @@
 package com.eyelesscode.task_by_task;
 
+import com.eyelesscode.task_by_task.shared.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class TaskByTaskApplicationTests {
+class TaskByTaskApplicationTests extends AbstractIntegrationTest {
 
-	@Test
-	void contextLoads() {
-	}
-
+    @Test
+    void contextLoads() {}
 }
