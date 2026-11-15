@@ -214,6 +214,43 @@ class KeysetCursorCodecTest {
                     .isInstanceOf(BadRequestException.class)
                     .hasMessage(EXPECTED_ERROR);
         }
+
+        @Test
+        @DisplayName(
+                "GroupCursor rechaza id, isPersonal o createdAt nulos en constructor y en"
+                        + " decodificación con checksum válido (GRP-REQ-09, EC-08)")
+        void shouldRejectGroupCursorWithNullFieldsInConstructorAndChecksumValidToken() {
+            assertThatThrownBy(() -> new KeysetCursor.GroupCursor(true, SAMPLE_INSTANT, null))
+                    .isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> new KeysetCursor.GroupCursor(null, SAMPLE_INSTANT, 1L))
+                    .isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> new KeysetCursor.GroupCursor(false, null, 1L))
+                    .isInstanceOf(IllegalArgumentException.class);
+
+            String missingIsPersonalToken =
+                    buildSignedToken(
+                            "{\"type\":\"GROUP\",\"createdAt\":\"2026-11-09T18:00:00Z\",\"id\":5}");
+            assertThatThrownBy(() -> codec.decodeGroupCursor(missingIsPersonalToken))
+                    .isInstanceOf(BadRequestException.class)
+                    .hasMessage(EXPECTED_ERROR);
+
+            String missingCreatedAtToken =
+                    buildSignedToken("{\"type\":\"GROUP\",\"isPersonal\":false,\"id\":5}");
+            assertThatThrownBy(() -> codec.decodeGroupCursor(missingCreatedAtToken))
+                    .isInstanceOf(BadRequestException.class)
+                    .hasMessage(EXPECTED_ERROR);
+        }
+
+        private String buildSignedToken(String rawJson) {
+            byte[] jsonBytes = rawJson.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            java.util.zip.CRC32 crc = new java.util.zip.CRC32();
+            crc.update(jsonBytes);
+            java.nio.ByteBuffer buffer =
+                    java.nio.ByteBuffer.allocate(Long.BYTES + jsonBytes.length);
+            buffer.putLong(crc.getValue());
+            buffer.put(jsonBytes);
+            return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(buffer.array());
+        }
     }
 
     @Nested

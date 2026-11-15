@@ -32,6 +32,12 @@ public sealed interface KeysetCursor
             if (id == null) {
                 throw new IllegalArgumentException("El id del cursor no puede ser nulo");
             }
+            if (isPersonal == null) {
+                throw new IllegalArgumentException("isPersonal no puede ser nulo");
+            }
+            if (createdAt == null) {
+                throw new IllegalArgumentException("createdAt no puede ser nulo");
+            }
         }
     }
 

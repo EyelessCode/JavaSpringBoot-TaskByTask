@@ -171,9 +171,13 @@ public class KeysetCursorCodec {
                             payload.createdAt(),
                             payload.id());
                 }
-                case "GROUP" ->
-                        new KeysetCursor.GroupCursor(
-                                payload.isPersonal(), payload.createdAt(), payload.id());
+                case "GROUP" -> {
+                    if (payload.isPersonal() == null || payload.createdAt() == null) {
+                        throw new BadRequestException(INVALID_CURSOR_MSG);
+                    }
+                    yield new KeysetCursor.GroupCursor(
+                            payload.isPersonal(), payload.createdAt(), payload.id());
+                }
                 case "TAG" -> {
                     if (payload.name() == null || payload.name().isBlank()) {
                         throw new BadRequestException(INVALID_CURSOR_MSG);
