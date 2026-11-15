@@ -2,7 +2,12 @@ package com.eyelesscode.task_by_task.task;
 
 import com.eyelesscode.task_by_task.group.Group;
 import com.eyelesscode.task_by_task.group.GroupRepository;
+import com.eyelesscode.task_by_task.shared.error.BadRequestException;
 import com.eyelesscode.task_by_task.shared.error.ResourceNotFoundException;
+import com.eyelesscode.task_by_task.shared.pagination.KeysetCursor;
+import com.eyelesscode.task_by_task.shared.pagination.KeysetCursorCodec;
+import com.eyelesscode.task_by_task.shared.pagination.KeysetPage;
+import com.eyelesscode.task_by_task.shared.pagination.SqlLikePattern;
 import com.eyelesscode.task_by_task.shared.security.SecurityUtils;
 import com.eyelesscode.task_by_task.shared.time.DateTimeProvider;
 import com.eyelesscode.task_by_task.tag.Tag;
@@ -25,6 +30,8 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -36,6 +43,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class TaskService {
 
+    private static final int MIN_PAGE_LIMIT = 1;
+    private static final int MAX_PAGE_LIMIT = 50;
+
     private final TaskRepository taskRepository;
     private final TaskTagRepository taskTagRepository;
     private final GroupRepository groupRepository;
@@ -44,6 +54,7 @@ public class TaskService {
     private final TagService tagService;
     private final TaskDueSchedulePort taskDueSchedulePort;
     private final DateTimeProvider dateTimeProvider;
+    private final KeysetCursorCodec keysetCursorCodec;
 
     public TaskService(
             TaskRepository taskRepository,
@@ -53,7 +64,8 @@ public class TaskService {
             TagRepository tagRepository,
             TagService tagService,
             TaskDueSchedulePort taskDueSchedulePort,
-            DateTimeProvider dateTimeProvider) {
+            DateTimeProvider dateTimeProvider,
+            KeysetCursorCodec keysetCursorCodec) {
         this.taskRepository = taskRepository;
         this.taskTagRepository = taskTagRepository;
         this.groupRepository = groupRepository;
@@ -62,6 +74,7 @@ public class TaskService {
         this.tagService = tagService;
         this.taskDueSchedulePort = taskDueSchedulePort;
         this.dateTimeProvider = dateTimeProvider;
+        this.keysetCursorCodec = keysetCursorCodec;
     }
 
     @Transactional
@@ -427,6 +440,132 @@ public class TaskService {
                         .map(TagMapper::toResponse)
                         .toList();
         return TaskMapper.toResponse(savedCopy, tagResponses, dateTimeProvider, userZone, now);
+    }
+
+    @Transactional(readOnly = true)
+    public KeysetPage<TaskResponse> listTasks(
+            List<Long> groupIds, TaskStatusFilter status, String search, String cursor, int limit) {
+        validateLimit(limit);
+        Long userId = SecurityUtils.getCurrentUserId();
+
+        List<Long> distinctGroupIds =
+                groupIds == null
+                        ? List.of()
+                        : groupIds.stream().filter(Objects::nonNull).distinct().toList();
+        if (!distinctGroupIds.isEmpty()) {
+            List<Group> foundGroups = groupRepository.findAllByIdInWithCreator(distinctGroupIds);
+            if (foundGroups.size() != distinctGroupIds.size()) {
+                throw new ResourceNotFoundException("Grupo no encontrado");
+            }
+            for (Group group : foundGroups) {
+                if (!group.getCreator().getId().equals(userId)) {
+                    throw new AccessDeniedException("No tiene permisos para realizar esta acción");
+                }
+            }
+        }
+
+        return executeTaskListing(userId, distinctGroupIds, status, search, cursor, limit);
+    }
+
+    @Transactional(readOnly = true)
+    public KeysetPage<TaskResponse> listGroupTasks(
+            Long groupId, TaskStatusFilter status, String search, String cursor, int limit) {
+        validateLimit(limit);
+        Long userId = SecurityUtils.getCurrentUserId();
+        loadOwnedGroup(groupId, userId);
+
+        return executeTaskListing(userId, List.of(groupId), status, search, cursor, limit);
+    }
+
+    private KeysetPage<TaskResponse> executeTaskListing(
+            Long userId,
+            List<Long> distinctGroupIds,
+            TaskStatusFilter status,
+            String search,
+            String cursor,
+            int limit) {
+        TaskStatusFilter effectiveStatus = status != null ? status : TaskStatusFilter.PENDING;
+        KeysetCursor.TaskCursor decodedCursor =
+                cursor != null ? keysetCursorCodec.decodeTaskCursor(cursor) : null;
+        if (decodedCursor != null) {
+            boolean incompatible =
+                    (effectiveStatus == TaskStatusFilter.PENDING && decodedCursor.completed())
+                            || (effectiveStatus == TaskStatusFilter.COMPLETED
+                                    && !decodedCursor.completed());
+            if (incompatible) {
+                throw new BadRequestException("El cursor de paginación proporcionado no es válido");
+            }
+        }
+
+        String searchPattern =
+                (search != null && !search.isBlank())
+                        ? SqlLikePattern.containsIgnoreCase(search.trim())
+                        : null;
+
+        User user =
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        ZoneId userZone = dateTimeProvider.parseZoneId(user.getTimezone());
+        Instant now = dateTimeProvider.now().truncatedTo(ChronoUnit.MICROS);
+
+        List<Task> rows =
+                taskRepository.findTasksByKeyset(
+                        userId,
+                        distinctGroupIds,
+                        effectiveStatus,
+                        searchPattern,
+                        decodedCursor,
+                        limit);
+
+        boolean hasNext = rows.size() > limit;
+        List<Task> pageTasks = hasNext ? rows.subList(0, limit) : rows;
+
+        Map<Long, List<TagResponse>> tagsByTaskId =
+                pageTasks.isEmpty()
+                        ? Map.of()
+                        : taskTagRepository
+                                .findByTaskIdsOrderByTagNameAndId(
+                                        pageTasks.stream().map(Task::getId).toList())
+                                .stream()
+                                .collect(
+                                        Collectors.groupingBy(
+                                                tt -> tt.getTask().getId(),
+                                                Collectors.mapping(
+                                                        tt -> TagMapper.toResponse(tt.getTag()),
+                                                        Collectors.toList())));
+
+        List<TaskResponse> responses =
+                pageTasks.stream()
+                        .map(
+                                task ->
+                                        TaskMapper.toResponse(
+                                                task,
+                                                tagsByTaskId.getOrDefault(task.getId(), List.of()),
+                                                dateTimeProvider,
+                                                userZone,
+                                                now))
+                        .toList();
+
+        String nextCursor = null;
+        if (hasNext) {
+            Task last = pageTasks.get(limit - 1);
+            nextCursor =
+                    keysetCursorCodec.encodeTaskCursor(
+                            last.isCompleted(),
+                            last.getDueDate(),
+                            last.getDueTime(),
+                            last.getCreatedAt(),
+                            last.getId());
+        }
+
+        return new KeysetPage<>(responses, nextCursor, hasNext, responses.size());
+    }
+
+    private static void validateLimit(int limit) {
+        if (limit < MIN_PAGE_LIMIT || limit > MAX_PAGE_LIMIT) {
+            throw new BadRequestException("El límite de paginación debe estar entre 1 y 50");
+        }
     }
 
     private Group loadOwnedGroup(Long groupId, Long userId) {

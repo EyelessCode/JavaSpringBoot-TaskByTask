@@ -139,7 +139,7 @@
     - Exponer ambos endpoints en `TaskController` y crear `TaskMoveAndCopyIntegrationTest`.
   - **Criterio de finalización (Done when):** `./mvnw spotless:check compile test-compile` y `./mvnw test -Dtest=TaskMoveAndCopyIntegrationTest` pasan al 100%.
 
-- [ ] **T8: Listados Keyset con orden compuesto y filtros combinados (`GET /api/v1/tasks` y `GET /api/v1/groups/{groupId}/tasks`)**
+- [x] **T8: Listados Keyset con orden compuesto y filtros combinados (`GET /api/v1/tasks` y `GET /api/v1/groups/{groupId}/tasks`)**
   - **Requisitos cubiertos:** TSK-REQ-15, TSK-REQ-16, TSK-REQ-17, TSK-REQ-18, TSK-REQ-19, TSK-REQ-20, TSK-REQ-21, TSK-REQ-22 a 27, EC-08, EC-09, RNF-04.
   - **Archivos a crear/modificar:**
     - `src/main/java/com/eyelesscode/task_by_task/task/TaskQueryRepository.java`

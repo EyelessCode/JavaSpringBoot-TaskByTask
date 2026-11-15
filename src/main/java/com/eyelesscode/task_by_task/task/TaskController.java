@@ -1,5 +1,6 @@
 package com.eyelesscode.task_by_task.task;
 
+import com.eyelesscode.task_by_task.shared.pagination.KeysetPage;
 import com.eyelesscode.task_by_task.task.dto.CreateTaskRequest;
 import com.eyelesscode.task_by_task.task.dto.TaskResponse;
 import com.eyelesscode.task_by_task.task.dto.TaskTargetGroupRequest;
@@ -8,6 +9,7 @@ import com.eyelesscode.task_by_task.task.dto.UpdateTaskRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** REST controller exposing task creation and detail endpoints. */
@@ -87,5 +90,28 @@ public class TaskController {
             @PathVariable Long taskId, @Valid @RequestBody TaskTargetGroupRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(taskService.copyTask(taskId, request));
+    }
+
+    @GetMapping("/tasks")
+    @Operation(summary = "Listar tareas del usuario con paginación Keyset y filtros")
+    public ResponseEntity<KeysetPage<TaskResponse>> listTasks(
+            @RequestParam(required = false) List<Long> groupIds,
+            @RequestParam(defaultValue = "PENDING") TaskStatusFilter status,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "20") int limit) {
+        return ResponseEntity.ok(taskService.listTasks(groupIds, status, search, cursor, limit));
+    }
+
+    @GetMapping("/groups/{groupId}/tasks")
+    @Operation(summary = "Listar tareas de un grupo con paginación Keyset y filtros")
+    public ResponseEntity<KeysetPage<TaskResponse>> listGroupTasks(
+            @PathVariable Long groupId,
+            @RequestParam(defaultValue = "PENDING") TaskStatusFilter status,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "20") int limit) {
+        return ResponseEntity.ok(
+                taskService.listGroupTasks(groupId, status, search, cursor, limit));
     }
 }
