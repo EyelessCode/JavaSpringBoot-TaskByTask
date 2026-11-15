@@ -1,6 +1,11 @@
 package com.eyelesscode.task_by_task.shared;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.eyelesscode.task_by_task.auth.RecoveryCode;
 import com.eyelesscode.task_by_task.auth.RecoveryCodeRepository;
@@ -18,10 +23,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.WebApplicationContext;
 
 class ApplicationIntegrationTest extends AbstractIntegrationTest {
 
+    @Autowired private WebApplicationContext context;
     @Autowired private JdbcTemplate jdbcTemplate;
     @Autowired private UserRepository userRepository;
     @Autowired private RecoveryCodeRepository recoveryCodeRepository;
@@ -125,5 +134,24 @@ class ApplicationIntegrationTest extends AbstractIntegrationTest {
         pushSubscriptionRepository.deleteByUserIdAndEndpoint(
                 user.getId(), "https://fcm.googleapis.com/fcm/send/123");
         assertThat(pushSubscriptionRepository.findById(sub.getId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName(
+            "Debe exponer el contrato OpenAPI /v3/api-docs y /swagger-ui/index.html con HTTP 200")
+    void shouldExposeOpenApiDocsAndSwaggerUi() throws Exception {
+        MockMvc mockMvc =
+                MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.openapi").isNotEmpty())
+                .andExpect(
+                        content()
+                                .string(
+                                        org.hamcrest.Matchers.containsString(
+                                                "/api/v1/auth/login")));
+
+        mockMvc.perform(get("/swagger-ui/index.html")).andExpect(status().isOk());
     }
 }
