@@ -1,19 +1,24 @@
 package com.eyelesscode.task_by_task.auth;
 
+import com.eyelesscode.task_by_task.auth.dto.LoginRequest;
+import com.eyelesscode.task_by_task.auth.dto.LogoutRequest;
 import com.eyelesscode.task_by_task.auth.dto.RegisterRequest;
 import com.eyelesscode.task_by_task.auth.dto.RegisterResponse;
 import com.eyelesscode.task_by_task.group.Group;
 import com.eyelesscode.task_by_task.group.GroupMembership;
 import com.eyelesscode.task_by_task.group.GroupMembershipRepository;
 import com.eyelesscode.task_by_task.group.GroupRepository;
+import com.eyelesscode.task_by_task.notification.PushSubscriptionRepository;
 import com.eyelesscode.task_by_task.shared.error.BadRequestException;
 import com.eyelesscode.task_by_task.shared.error.ResourceConflictException;
 import com.eyelesscode.task_by_task.shared.ratelimit.RateLimitService;
+import com.eyelesscode.task_by_task.shared.security.SecurityUtils;
 import com.eyelesscode.task_by_task.shared.time.DateTimeProvider;
 import com.eyelesscode.task_by_task.user.User;
 import com.eyelesscode.task_by_task.user.UserRepository;
 import com.eyelesscode.task_by_task.user.dto.UserResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.time.DateTimeException;
 import java.time.Instant;
@@ -21,6 +26,8 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
@@ -38,11 +45,14 @@ public class AuthService {
     private static final String DEFAULT_TIME_FORMAT = "24H";
     private static final String PERSONAL_GROUP_NAME = "Personal";
     private static final String ROLE_CREATOR = "CREATOR";
+    private static final String DUMMY_BCRYPT_HASH =
+            "{bcrypt}$2a$10$7EqJtq98hPqEX7fNZaFWoOHi7mN7h0P9yC5O3L1s0U2xW6V9aZ3rO";
 
     private final UserRepository userRepository;
     private final GroupRepository groupRepository;
     private final GroupMembershipRepository groupMembershipRepository;
     private final RecoveryCodeRepository recoveryCodeRepository;
+    private final PushSubscriptionRepository pushSubscriptionRepository;
     private final PasswordEncoder passwordEncoder;
     private final RateLimitService rateLimitService;
     private final DateTimeProvider dateTimeProvider;
@@ -52,6 +62,7 @@ public class AuthService {
             GroupRepository groupRepository,
             GroupMembershipRepository groupMembershipRepository,
             RecoveryCodeRepository recoveryCodeRepository,
+            PushSubscriptionRepository pushSubscriptionRepository,
             PasswordEncoder passwordEncoder,
             RateLimitService rateLimitService,
             DateTimeProvider dateTimeProvider) {
@@ -59,6 +70,7 @@ public class AuthService {
         this.groupRepository = groupRepository;
         this.groupMembershipRepository = groupMembershipRepository;
         this.recoveryCodeRepository = recoveryCodeRepository;
+        this.pushSubscriptionRepository = pushSubscriptionRepository;
         this.passwordEncoder = passwordEncoder;
         this.rateLimitService = rateLimitService;
         this.dateTimeProvider = dateTimeProvider;
@@ -124,6 +136,66 @@ public class AuthService {
                         plaintextCodes.size());
 
         return new RegisterResponse(userResponse, plaintextCodes);
+    }
+
+    @Transactional
+    public UserResponse login(LoginRequest request, HttpServletRequest httpRequest) {
+        rateLimitService.consumeOrThrow(rateLimitService.buildPartitionKey(httpRequest, "login"));
+
+        String normalizedEmail = request.email().trim().toLowerCase(Locale.ROOT);
+        Optional<User> optionalUser = userRepository.findByEmailIgnoreCase(normalizedEmail);
+        if (optionalUser.isEmpty()) {
+            passwordEncoder.matches(request.password(), DUMMY_BCRYPT_HASH);
+            throw new BadCredentialsException(
+                    "El correo electrónico o la contraseña son incorrectos");
+        }
+
+        User user = optionalUser.get();
+        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+            throw new BadCredentialsException(
+                    "El correo electrónico o la contraseña son incorrectos");
+        }
+
+        if (request.timezone() != null && !request.timezone().isBlank()) {
+            String validatedTimezone = resolveAndValidateTimezone(request.timezone());
+            if (!validatedTimezone.equals(user.getTimezone())) {
+                user.setTimezone(validatedTimezone);
+                user.setUpdatedAt(dateTimeProvider.now());
+                user = userRepository.save(user);
+            }
+        }
+
+        establishAuthenticatedSession(user, httpRequest);
+
+        int remainingCodes = (int) recoveryCodeRepository.countByUserIdAndUsedFalse(user.getId());
+
+        return new UserResponse(
+                user.getId(),
+                user.getEmail(),
+                user.getUsername(),
+                user.getDisplayName(),
+                user.getTimezone(),
+                user.getTimeFormat(),
+                user.getCreatedAt(),
+                remainingCodes);
+    }
+
+    @Transactional
+    public void logout(
+            LogoutRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse) {
+        Long userId = SecurityUtils.getCurrentUserId();
+
+        if (request != null && request.endpoint() != null && !request.endpoint().isBlank()) {
+            pushSubscriptionRepository.deleteByUserIdAndEndpoint(userId, request.endpoint());
+        }
+
+        HttpSession session = httpRequest.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
+        SecurityContextHolder.clearContext();
     }
 
     private String resolveAndValidateTimezone(String timezone) {

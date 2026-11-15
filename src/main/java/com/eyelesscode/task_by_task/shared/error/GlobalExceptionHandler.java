@@ -16,6 +16,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -130,6 +131,17 @@ public class GlobalExceptionHandler {
         problemDetail.setInstance(
                 URI.create(request.getRequestURI() != null ? request.getRequestURI() : "/"));
         return ResponseEntity.status(HttpStatus.CONFLICT).body(problemDetail);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ProblemDetail> handleBadCredentials(
+            BadCredentialsException ex, HttpServletRequest request) {
+        ProblemDetail problemDetail =
+                ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        problemDetail.setTitle("Credenciales inválidas");
+        problemDetail.setInstance(
+                URI.create(request.getRequestURI() != null ? request.getRequestURI() : "/"));
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(problemDetail);
     }
 
     @ExceptionHandler(AccessDeniedException.class)

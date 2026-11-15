@@ -61,7 +61,7 @@
     - Crear `AuthRegistrationIntegrationTest` con pruebas completas de registro exitoso, grupo personal creado, 8 códigos recibidos, y rechazo 409 por email o username duplicado.
   - **Criterio de finalización (Done when):** `./mvnw test -Dtest=AuthRegistrationIntegrationTest` pasa al 100%.
 
-- [ ] **T4: Inicio y cierre de sesión con rate limiting y cookie persistente (`AuthService.login`, `AuthService.logout`)**
+- [x] **T4: Inicio y cierre de sesión con rate limiting y cookie persistente (`AuthService.login`, `AuthService.logout`)**
   - **Requisitos cubiertos:** AUTH-REQ-08, AUTH-REQ-09, AUTH-REQ-10, AUTH-REQ-11, AUTH-REQ-12, AUTH-REQ-27, AUTH-REQ-28, EC-07, EC-09, RNF-06, RNF-09.
   - **Archivos a crear/modificar:**
     - `src/main/java/com/eyelesscode/task_by_task/auth/dto/LoginRequest.java`
