@@ -35,7 +35,7 @@
     - Escribir/ampliar pruebas unitarias en `KeysetCursorCodecTest`, `SqlLikePatternTest` y `GlobalExceptionHandlerTest`.
   - **Criterio de finalización (Done when):** `./mvnw spotless:check compile test-compile` y `./mvnw test -Dtest=KeysetCursorCodecTest,SqlLikePatternTest,GlobalExceptionHandlerTest` pasan al 100%.
 
-- [ ] **T2: Módulo `tag`: entidad `Tag`, reglas compartidas, autocompletado Keyset, creación idempotente/concurrente y eliminación en grupo**
+- [x] **T2: Módulo `tag`: entidad `Tag`, reglas compartidas, autocompletado Keyset, creación idempotente/concurrente y eliminación en grupo**
   - **Requisitos cubiertos:** TAG-REQ-01, TAG-REQ-02, TAG-REQ-03, TAG-REQ-04, TAG-REQ-05, TAG-REQ-06, TAG-REQ-08, TAG-REQ-09, TSK-REQ-21, TSK-REQ-22 a 27, EC-05, EC-06, EC-08, EC-09, EC-10.
   - **Archivos a crear:**
     - `src/main/java/com/eyelesscode/task_by_task/tag/Tag.java`
