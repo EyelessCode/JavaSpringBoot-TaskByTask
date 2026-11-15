@@ -2,15 +2,32 @@ package com.eyelesscode.task_by_task.shared;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.eyelesscode.task_by_task.auth.RecoveryCode;
+import com.eyelesscode.task_by_task.auth.RecoveryCodeRepository;
+import com.eyelesscode.task_by_task.group.Group;
+import com.eyelesscode.task_by_task.group.GroupMembership;
+import com.eyelesscode.task_by_task.group.GroupMembershipRepository;
+import com.eyelesscode.task_by_task.group.GroupRepository;
+import com.eyelesscode.task_by_task.notification.PushSubscription;
+import com.eyelesscode.task_by_task.notification.PushSubscriptionRepository;
+import com.eyelesscode.task_by_task.user.User;
+import com.eyelesscode.task_by_task.user.UserRepository;
+import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
 class ApplicationIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired private JdbcTemplate jdbcTemplate;
+    @Autowired private UserRepository userRepository;
+    @Autowired private RecoveryCodeRepository recoveryCodeRepository;
+    @Autowired private GroupRepository groupRepository;
+    @Autowired private GroupMembershipRepository groupMembershipRepository;
+    @Autowired private PushSubscriptionRepository pushSubscriptionRepository;
 
     @Test
     @DisplayName(
@@ -45,5 +62,68 @@ class ApplicationIntegrationTest extends AbstractIntegrationTest {
                         "spring_session",
                         "spring_session_attributes",
                         "scheduled_tasks");
+    }
+
+    @Test
+    @Transactional
+    @DisplayName(
+            "Debe persistir y consultar entidades JPA base y sus repositorios con"
+                    + " ddl-auto=validate")
+    void shouldPersistAndQueryBaseEntitiesThroughRepositories() {
+        Instant now = Instant.now();
+
+        User user =
+                new User(
+                        "test@example.com",
+                        "TestUser123",
+                        "Test User",
+                        "{bcrypt}$2a$10$dummyhash",
+                        "UTC",
+                        "24H",
+                        now,
+                        now);
+        user = userRepository.saveAndFlush(user);
+        assertThat(user.getId()).isNotNull();
+
+        assertThat(userRepository.existsByEmailIgnoreCase("TEST@EXAMPLE.COM")).isTrue();
+        assertThat(userRepository.existsByUsernameIgnoreCase("testuser123")).isTrue();
+        assertThat(userRepository.findByEmailIgnoreCase("TEST@example.com")).isPresent();
+        assertThat(userRepository.findByUsernameIgnoreCase("testuser123")).isPresent();
+        assertThat(userRepository.existsByEmailIgnoreCaseAndIdNot("TEST@EXAMPLE.COM", user.getId()))
+                .isFalse();
+        assertThat(userRepository.existsByUsernameIgnoreCaseAndIdNot("testuser123", user.getId()))
+                .isFalse();
+
+        Group group = new Group(user, "Personal", true, now, now);
+        group = groupRepository.saveAndFlush(group);
+        assertThat(group.getId()).isNotNull();
+        assertThat(groupRepository.findByCreatorIdAndIsPersonalTrue(user.getId())).isPresent();
+
+        GroupMembership membership = new GroupMembership(group, user, "CREATOR", now);
+        membership = groupMembershipRepository.saveAndFlush(membership);
+        assertThat(membership.getId()).isNotNull();
+
+        RecoveryCode code = new RecoveryCode(user, "{bcrypt}$2a$10$codehash", false, null, now);
+        code = recoveryCodeRepository.saveAndFlush(code);
+        assertThat(code.getId()).isNotNull();
+        assertThat(recoveryCodeRepository.countByUserIdAndUsedFalse(user.getId())).isEqualTo(1L);
+        assertThat(recoveryCodeRepository.findByUserIdAndUsedFalse(user.getId())).hasSize(1);
+
+        recoveryCodeRepository.deleteByUserId(user.getId());
+        assertThat(recoveryCodeRepository.countByUserIdAndUsedFalse(user.getId())).isZero();
+
+        PushSubscription sub =
+                new PushSubscription(
+                        user,
+                        "https://fcm.googleapis.com/fcm/send/123",
+                        "p256dh-key",
+                        "auth-key",
+                        now);
+        sub = pushSubscriptionRepository.saveAndFlush(sub);
+        assertThat(sub.getId()).isNotNull();
+
+        pushSubscriptionRepository.deleteByUserIdAndEndpoint(
+                user.getId(), "https://fcm.googleapis.com/fcm/send/123");
+        assertThat(pushSubscriptionRepository.findById(sub.getId())).isEmpty();
     }
 }
