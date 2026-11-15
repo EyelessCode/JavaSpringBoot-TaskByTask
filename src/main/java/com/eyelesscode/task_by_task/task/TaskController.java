@@ -2,6 +2,7 @@ package com.eyelesscode.task_by_task.task;
 
 import com.eyelesscode.task_by_task.task.dto.CreateTaskRequest;
 import com.eyelesscode.task_by_task.task.dto.TaskResponse;
+import com.eyelesscode.task_by_task.task.dto.TaskTargetGroupRequest;
 import com.eyelesscode.task_by_task.task.dto.UpdateTaskCompletionRequest;
 import com.eyelesscode.task_by_task.task.dto.UpdateTaskRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -71,5 +72,20 @@ public class TaskController {
             @PathVariable Long taskId, @PathVariable Long tagId) {
         taskService.detachTagFromTask(taskId, tagId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/tasks/{taskId}/move")
+    @Operation(summary = "Mover una tarea a otro grupo")
+    public ResponseEntity<TaskResponse> moveTask(
+            @PathVariable Long taskId, @Valid @RequestBody TaskTargetGroupRequest request) {
+        return ResponseEntity.ok(taskService.moveTask(taskId, request));
+    }
+
+    @PostMapping("/tasks/{taskId}/copy")
+    @Operation(summary = "Copiar una tarea a un grupo")
+    public ResponseEntity<TaskResponse> copyTask(
+            @PathVariable Long taskId, @Valid @RequestBody TaskTargetGroupRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(taskService.copyTask(taskId, request));
     }
 }

@@ -13,6 +13,7 @@ import com.eyelesscode.task_by_task.tag.dto.TagResponse;
 import com.eyelesscode.task_by_task.task.dto.CreateTaskRequest;
 import com.eyelesscode.task_by_task.task.dto.TaskPatchValidator;
 import com.eyelesscode.task_by_task.task.dto.TaskResponse;
+import com.eyelesscode.task_by_task.task.dto.TaskTargetGroupRequest;
 import com.eyelesscode.task_by_task.task.dto.UpdateTaskCompletionRequest;
 import com.eyelesscode.task_by_task.task.dto.UpdateTaskRequest;
 import com.eyelesscode.task_by_task.user.User;
@@ -320,6 +321,112 @@ public class TaskService {
 
         taskTagRepository.delete(taskTag);
         taskTagRepository.flush();
+    }
+
+    @Transactional
+    public TaskResponse moveTask(Long taskId, TaskTargetGroupRequest request) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        Task task =
+                taskRepository
+                        .findByIdForUpdate(taskId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Tarea no encontrada"));
+        if (!task.getGroup().getCreator().getId().equals(userId)) {
+            throw new AccessDeniedException("No tiene permisos para realizar esta acción");
+        }
+
+        Group targetGroup = loadOwnedGroup(request.targetGroupId(), userId);
+        ZoneId userZone = dateTimeProvider.parseZoneId(task.getGroup().getCreator().getTimezone());
+        Instant now = dateTimeProvider.now().truncatedTo(ChronoUnit.MICROS);
+
+        List<TaskTag> sourceTaskTags =
+                taskTagRepository.findByTaskIdsOrderByTagNameAndId(List.of(task.getId()));
+
+        if (targetGroup.getId().equals(task.getGroup().getId())) {
+            List<TagResponse> existingTags =
+                    sourceTaskTags.stream()
+                            .map(taskTag -> TagMapper.toResponse(taskTag.getTag()))
+                            .toList();
+            return TaskMapper.toResponse(task, existingTags, dateTimeProvider, userZone, now);
+        }
+
+        List<String> tagNames = sourceTaskTags.stream().map(tt -> tt.getTag().getName()).toList();
+        List<Tag> targetTags =
+                tagNames.isEmpty()
+                        ? List.of()
+                        : tagService.resolveOrCreateTags(targetGroup, tagNames, now);
+
+        if (!sourceTaskTags.isEmpty()) {
+            taskTagRepository.deleteAllInBatch(sourceTaskTags);
+            taskTagRepository.flush();
+        }
+        if (!targetTags.isEmpty()) {
+            taskTagRepository.saveAll(
+                    targetTags.stream().map(tag -> new TaskTag(task, tag, now)).toList());
+        }
+
+        task.setGroup(targetGroup);
+        task.setUpdatedAt(now);
+        taskRepository.save(task);
+
+        List<TagResponse> tagResponses =
+                targetTags.stream()
+                        .sorted(Comparator.comparing(Tag::getName).thenComparing(Tag::getId))
+                        .map(TagMapper::toResponse)
+                        .toList();
+        return TaskMapper.toResponse(task, tagResponses, dateTimeProvider, userZone, now);
+    }
+
+    @Transactional
+    public TaskResponse copyTask(Long taskId, TaskTargetGroupRequest request) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        Task sourceTask =
+                taskRepository
+                        .findByIdWithGroupAndCreator(taskId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Tarea no encontrada"));
+        if (!sourceTask.getGroup().getCreator().getId().equals(userId)) {
+            throw new AccessDeniedException("No tiene permisos para realizar esta acción");
+        }
+
+        Group targetGroup = loadOwnedGroup(request.targetGroupId(), userId);
+        ZoneId userZone =
+                dateTimeProvider.parseZoneId(sourceTask.getGroup().getCreator().getTimezone());
+        Instant now = dateTimeProvider.now().truncatedTo(ChronoUnit.MICROS);
+
+        Task copiedTask =
+                new Task(
+                        targetGroup,
+                        null,
+                        sourceTask.getTitle(),
+                        sourceTask.getDescription(),
+                        sourceTask.isCompleted(),
+                        sourceTask.getCompletedAt(),
+                        sourceTask.getDueDate(),
+                        sourceTask.getDueTime(),
+                        now,
+                        now);
+        Task savedCopy = taskRepository.save(copiedTask);
+
+        List<TaskTag> sourceTaskTags =
+                taskTagRepository.findByTaskIdsOrderByTagNameAndId(List.of(sourceTask.getId()));
+        List<String> tagNames = sourceTaskTags.stream().map(tt -> tt.getTag().getName()).toList();
+        List<Tag> targetTags =
+                tagNames.isEmpty()
+                        ? List.of()
+                        : tagService.resolveOrCreateTags(targetGroup, tagNames, now);
+
+        if (!targetTags.isEmpty()) {
+            taskTagRepository.saveAll(
+                    targetTags.stream().map(tag -> new TaskTag(savedCopy, tag, now)).toList());
+        }
+
+        syncDueSchedule(savedCopy, userZone, now);
+
+        List<TagResponse> tagResponses =
+                targetTags.stream()
+                        .sorted(Comparator.comparing(Tag::getName).thenComparing(Tag::getId))
+                        .map(TagMapper::toResponse)
+                        .toList();
+        return TaskMapper.toResponse(savedCopy, tagResponses, dateTimeProvider, userZone, now);
     }
 
     private Group loadOwnedGroup(Long groupId, Long userId) {

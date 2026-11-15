@@ -124,7 +124,7 @@
     - Exponer los tres endpoints en `TaskController` y crear `TaskCompletionAndDeletionIntegrationTest` cubriendo todos los contratos `200`/`204`/`400`/`401`/`403`/`404`, `EC-02`, `EC-06` y limpieza selectiva de `scheduled_tasks`.
   - **Criterio de finalización (Done when):** `./mvnw spotless:check compile test-compile` y `./mvnw test -Dtest=TaskCompletionAndDeletionIntegrationTest` pasan al 100%.
 
-- [ ] **T7: Mover y copiar tareas entre grupos (`POST /api/v1/tasks/{taskId}/move` y `POST /api/v1/tasks/{taskId}/copy`)**
+- [x] **T7: Mover y copiar tareas entre grupos (`POST /api/v1/tasks/{taskId}/move` y `POST /api/v1/tasks/{taskId}/copy`)**
   - **Requisitos cubiertos:** TSK-REQ-11, TSK-REQ-12, TSK-REQ-13, TSK-REQ-14, TSK-REQ-22 a 27, TAG-REQ-02, TAG-REQ-09, EC-07.
   - **Archivos a crear/modificar:**
     - `src/main/java/com/eyelesscode/task_by_task/task/dto/TaskTargetGroupRequest.java`
