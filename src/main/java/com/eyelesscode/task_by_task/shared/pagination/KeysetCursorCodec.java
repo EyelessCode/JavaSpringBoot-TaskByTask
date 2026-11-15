@@ -161,7 +161,9 @@ public class KeysetCursorCodec {
         try {
             return switch (payload.type()) {
                 case "TASK" -> {
-                    if (payload.dueTime() != null && payload.dueDate() == null) {
+                    if (payload.completed() == null
+                            || payload.createdAt() == null
+                            || (payload.dueTime() != null && payload.dueDate() == null)) {
                         throw new BadRequestException(INVALID_CURSOR_MSG);
                     }
                     yield new KeysetCursor.TaskCursor(

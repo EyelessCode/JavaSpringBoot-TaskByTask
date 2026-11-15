@@ -241,6 +241,49 @@ class KeysetCursorCodecTest {
                     .hasMessage(EXPECTED_ERROR);
         }
 
+        @Test
+        @DisplayName(
+                "TaskCursor rechaza completed, createdAt o id nulos (y dueTime sin dueDate) en"
+                        + " constructor y en decodificación con checksum válido (TSK-REQ-20,"
+                        + " EC-09)")
+        void shouldRejectTaskCursorWithNullFieldsInConstructorAndChecksumValidToken() {
+            assertThatThrownBy(
+                            () -> new KeysetCursor.TaskCursor(null, null, null, SAMPLE_INSTANT, 1L))
+                    .isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> new KeysetCursor.TaskCursor(false, null, null, null, 1L))
+                    .isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(
+                            () ->
+                                    new KeysetCursor.TaskCursor(
+                                            false, null, null, SAMPLE_INSTANT, null))
+                    .isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(
+                            () ->
+                                    new KeysetCursor.TaskCursor(
+                                            false, null, LocalTime.of(9, 0), SAMPLE_INSTANT, 1L))
+                    .isInstanceOf(IllegalArgumentException.class);
+
+            String missingCompletedToken =
+                    buildSignedToken(
+                            "{\"type\":\"TASK\",\"createdAt\":\"2026-11-09T18:00:00Z\",\"id\":5}");
+            assertThatThrownBy(() -> codec.decodeTaskCursor(missingCompletedToken))
+                    .isInstanceOf(BadRequestException.class)
+                    .hasMessage(EXPECTED_ERROR);
+
+            String missingCreatedAtToken =
+                    buildSignedToken("{\"type\":\"TASK\",\"completed\":false,\"id\":5}");
+            assertThatThrownBy(() -> codec.decodeTaskCursor(missingCreatedAtToken))
+                    .isInstanceOf(BadRequestException.class)
+                    .hasMessage(EXPECTED_ERROR);
+
+            String dueTimeWithoutDateToken =
+                    buildSignedToken(
+                            "{\"type\":\"TASK\",\"completed\":false,\"dueTime\":\"09:00:00\",\"createdAt\":\"2026-11-09T18:00:00Z\",\"id\":5}");
+            assertThatThrownBy(() -> codec.decodeTaskCursor(dueTimeWithoutDateToken))
+                    .isInstanceOf(BadRequestException.class)
+                    .hasMessage(EXPECTED_ERROR);
+        }
+
         private String buildSignedToken(String rawJson) {
             byte[] jsonBytes = rawJson.getBytes(java.nio.charset.StandardCharsets.UTF_8);
             java.util.zip.CRC32 crc = new java.util.zip.CRC32();

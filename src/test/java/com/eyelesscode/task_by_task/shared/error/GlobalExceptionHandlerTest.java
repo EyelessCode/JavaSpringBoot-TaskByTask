@@ -14,6 +14,7 @@ import com.eyelesscode.task_by_task.shared.ratelimit.RateLimitException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,17 @@ class GlobalExceptionHandlerTest {
 
         @PostMapping("/validation")
         void triggerValidation(@Valid @RequestBody SampleRequestDto dto) {}
+
+        @GetMapping("/field-validation")
+        void triggerFieldValidation() {
+            throw new FieldValidationException(
+                    List.of(
+                            new ValidationErrorDetail(
+                                    "title", "El título debe tener entre 2 y 100 caracteres"),
+                            new ValidationErrorDetail(
+                                    "tags[0]",
+                                    "La etiqueta no puede contener comas ni punto y coma")));
+        }
 
         @GetMapping("/bad-request")
         void triggerBadRequest() {
@@ -103,6 +115,30 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.invalidParams[1].name").value("value"))
                 .andExpect(
                         jsonPath("$.invalidParams[1].reason").value("El valor debe ser positivo"));
+    }
+
+    @Test
+    @DisplayName(
+            "400: FieldValidationException devuelve RFC 7807 con invalidParams ordenados"
+                    + " (TSK-REQ-27)")
+    void shouldHandleFieldValidationException() throws Exception {
+        mockMvc.perform(get("/test-errors/field-validation"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Error de validación"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(
+                        jsonPath("$.detail")
+                                .value("Uno o más campos contienen errores de validación"))
+                .andExpect(jsonPath("$.instance").value("/test-errors/field-validation"))
+                .andExpect(jsonPath("$.invalidParams", hasSize(2)))
+                .andExpect(jsonPath("$.invalidParams[0].name").value("tags[0]"))
+                .andExpect(
+                        jsonPath("$.invalidParams[0].reason")
+                                .value("La etiqueta no puede contener comas ni punto y coma"))
+                .andExpect(jsonPath("$.invalidParams[1].name").value("title"))
+                .andExpect(
+                        jsonPath("$.invalidParams[1].reason")
+                                .value("El título debe tener entre 2 y 100 caracteres"));
     }
 
     @Test

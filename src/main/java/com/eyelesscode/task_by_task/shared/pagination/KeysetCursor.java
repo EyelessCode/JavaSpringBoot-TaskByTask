@@ -20,6 +20,12 @@ public sealed interface KeysetCursor
             if (id == null) {
                 throw new IllegalArgumentException("El id del cursor no puede ser nulo");
             }
+            if (completed == null) {
+                throw new IllegalArgumentException("completed no puede ser nulo");
+            }
+            if (createdAt == null) {
+                throw new IllegalArgumentException("createdAt no puede ser nulo");
+            }
             if (dueTime != null && dueDate == null) {
                 throw new IllegalArgumentException("dueTime requiere dueDate");
             }

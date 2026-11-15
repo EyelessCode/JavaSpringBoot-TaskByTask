@@ -2,6 +2,7 @@ package com.eyelesscode.task_by_task.group;
 
 import jakarta.persistence.LockModeType;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
@@ -13,6 +14,9 @@ import org.springframework.data.repository.query.Param;
 public interface GroupRepository extends JpaRepository<Group, Long> {
 
     Optional<Group> findByCreatorIdAndIsPersonalTrue(Long creatorId);
+
+    @Query("SELECT g FROM Group g JOIN FETCH g.creator WHERE g.id IN :ids")
+    List<Group> findAllByIdInWithCreator(@Param("ids") Collection<Long> ids);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT g FROM Group g WHERE g.id = :id")

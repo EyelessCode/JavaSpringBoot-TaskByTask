@@ -32,13 +32,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ProblemDetail> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
-        ProblemDetail problemDetail =
-                ProblemDetail.forStatusAndDetail(
-                        HttpStatus.BAD_REQUEST, "Uno o más campos contienen errores de validación");
-        problemDetail.setTitle("Error de validación");
-        problemDetail.setInstance(
-                URI.create(request.getRequestURI() != null ? request.getRequestURI() : "/"));
-
         List<ValidationErrorDetail> invalidParams = new ArrayList<>();
         for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
             invalidParams.add(
@@ -56,15 +49,29 @@ public class GlobalExceptionHandler {
                                     ? globalError.getDefaultMessage()
                                     : "Valor inválido"));
         }
-        invalidParams.sort(Comparator.comparing(ValidationErrorDetail::name));
-        problemDetail.setProperty("invalidParams", invalidParams);
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
+        return buildValidationResponse(invalidParams, request);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ProblemDetail> handleConstraintViolation(
             ConstraintViolationException ex, HttpServletRequest request) {
+        List<ValidationErrorDetail> invalidParams = new ArrayList<>();
+        for (ConstraintViolation<?> violation : ex.getConstraintViolations()) {
+            invalidParams.add(
+                    new ValidationErrorDetail(
+                            violation.getPropertyPath().toString(), violation.getMessage()));
+        }
+        return buildValidationResponse(invalidParams, request);
+    }
+
+    @ExceptionHandler(FieldValidationException.class)
+    public ResponseEntity<ProblemDetail> handleFieldValidation(
+            FieldValidationException ex, HttpServletRequest request) {
+        return buildValidationResponse(ex.getInvalidParams(), request);
+    }
+
+    private ResponseEntity<ProblemDetail> buildValidationResponse(
+            List<ValidationErrorDetail> rawErrors, HttpServletRequest request) {
         ProblemDetail problemDetail =
                 ProblemDetail.forStatusAndDetail(
                         HttpStatus.BAD_REQUEST, "Uno o más campos contienen errores de validación");
@@ -72,14 +79,9 @@ public class GlobalExceptionHandler {
         problemDetail.setInstance(
                 URI.create(request.getRequestURI() != null ? request.getRequestURI() : "/"));
 
-        List<ValidationErrorDetail> invalidParams = new ArrayList<>();
-        for (ConstraintViolation<?> violation : ex.getConstraintViolations()) {
-            invalidParams.add(
-                    new ValidationErrorDetail(
-                            violation.getPropertyPath().toString(), violation.getMessage()));
-        }
-        invalidParams.sort(Comparator.comparing(ValidationErrorDetail::name));
-        problemDetail.setProperty("invalidParams", invalidParams);
+        List<ValidationErrorDetail> sortedErrors = new ArrayList<>(rawErrors);
+        sortedErrors.sort(Comparator.comparing(ValidationErrorDetail::name));
+        problemDetail.setProperty("invalidParams", sortedErrors);
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
     }
