@@ -34,7 +34,7 @@
     - Ampliar `KeysetCursorCodecTest` y crear `GroupMapperTest` verificando constructores compactos, mapeo y rechazo de cursores de grupo incompletos.
   - **Criterio de finalización (Done when):** `./mvnw spotless:check compile test-compile` y `./mvnw test -Dtest=KeysetCursorCodecTest,GroupMapperTest,ApplicationIntegrationTest` pasan al 100%.
 
-- [ ] **T2: Creación de grupos individuales y consulta de detalle por ID (`POST /api/v1/groups` y `GET /api/v1/groups/{groupId}`)**
+- [x] **T2: Creación de grupos individuales y consulta de detalle por ID (`POST /api/v1/groups` y `GET /api/v1/groups/{groupId}`)**
   - **Requisitos cubiertos:** GRP-REQ-01, GRP-REQ-02, GRP-REQ-03, GRP-REQ-04, GRP-REQ-05, GRP-REQ-11, GRP-REQ-12, GRP-REQ-13, GRP-REQ-22, GRP-REQ-23, GRP-REQ-24, GRP-REQ-25, EC-01, EC-03, EC-05, EC-10, EC-11, RNF-20.
   - **Archivos a crear:**
     - `src/main/java/com/eyelesscode/task_by_task/group/GroupService.java`
