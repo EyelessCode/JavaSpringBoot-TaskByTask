@@ -47,7 +47,7 @@
     - Crear `GroupCreationAndDetailIntegrationTest` sobre Testcontainers PostgreSQL cubriendo creación exitosa, membresía `CREATOR`, nombres duplicados permitidos, recorte `trim()`, ignorar `"isPersonal": true` en el JSON, errores `400` (`invalidParams` y JSON/path malformados), `401` sin sesión, `403` sin CSRF o grupo de otro usuario, y `404` cuando no existe.
   - **Criterio de finalización (Done when):** `./mvnw spotless:check` y `./mvnw test -Dtest=GroupCreationAndDetailIntegrationTest` pasan al 100%.
 
-- [ ] **T3: Listado paginado Keyset de grupos (`GET /api/v1/groups`)**
+- [x] **T3: Listado paginado Keyset de grupos (`GET /api/v1/groups`)**
   - **Requisitos cubiertos:** GRP-REQ-06, GRP-REQ-07, GRP-REQ-08, GRP-REQ-09, GRP-REQ-10, GRP-REQ-22, GRP-REQ-23, GRP-REQ-25, EC-02, EC-03, EC-07, EC-08, EC-09, EC-10, RNF-04.
   - **Archivos a crear/modificar:**
     - `src/main/java/com/eyelesscode/task_by_task/group/GroupService.java`
