@@ -89,7 +89,7 @@
     - Crear `AuthPasswordRecoveryIntegrationTest` verificando flujo exitoso, código consumido no reusable, revocación total de sesiones y mitigación de canal lateral ante correos inexistentes.
   - **Criterio de finalización (Done when):** `./mvnw test -Dtest=AuthPasswordRecoveryIntegrationTest` pasa al 100%.
 
-- [ ] **T6: Consulta y actualización de perfil y preferencias (`UserService.getProfile`, `UserService.updateProfile`)**
+- [x] **T6: Consulta y actualización de perfil y preferencias (`UserService.getProfile`, `UserService.updateProfile`)**
   - **Requisitos cubiertos:** AUTH-REQ-17, AUTH-REQ-18, AUTH-REQ-19, AUTH-REQ-20, AUTH-REQ-30, EC-01, EC-02, RNF-14.
   - **Archivos a crear:**
     - `src/main/java/com/eyelesscode/task_by_task/user/dto/UpdateProfileRequest.java`
