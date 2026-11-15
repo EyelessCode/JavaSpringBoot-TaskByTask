@@ -1,0 +1,23 @@
+# PostgreSQL local para desarrollo (perfil `dev`).
+# Levantar con: docker compose -f docker-compose.dev.yml --env-file .env.dev up -d
+services:
+  postgres-dev:
+    image: postgres:alpine
+    container_name: taskbytask-postgres-dev
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: ${DEV_DB_NAME:-taskbytask_dev}
+      POSTGRES_USER: ${DEV_DB_USERNAME:-taskbytask_dev}
+      POSTGRES_PASSWORD: ${DEV_DB_PASSWORD:-taskbytask_dev_local}
+    volumes:
+      - taskbytask_dev_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DEV_DB_USERNAME:-taskbytask_dev} -d ${DEV_DB_NAME:-taskbytask_dev}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  taskbytask_dev_pgdata:
