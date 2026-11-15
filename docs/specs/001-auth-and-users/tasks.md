@@ -43,7 +43,7 @@
     - Implementar prueba unitaria `RecoveryCodeGeneratorTest` validando entropía, unicidad, formato y normalización.
   - **Criterio de finalización (Done when):** `./mvnw test -Dtest=RecoveryCodeGeneratorTest` pasa al 100% y `./mvnw spotless:check` es exitoso.
 
-- [ ] **T3: DTOs inmutables de autenticación y registro atómico (`AuthService.register`)**
+- [x] **T3: DTOs inmutables de autenticación y registro atómico (`AuthService.register`)**
   - **Requisitos cubiertos:** AUTH-REQ-01, AUTH-REQ-02, AUTH-REQ-03, AUTH-REQ-04, AUTH-REQ-05, AUTH-REQ-06, AUTH-REQ-07, EC-01, RNF-20.
   - **Archivos a crear/modificar:**
     - `src/main/java/com/eyelesscode/task_by_task/shared/security/SecurityConfig.java` (permitir `/api/v1/auth/register`, `/api/v1/auth/login`, `/api/v1/auth/recover-password`)
