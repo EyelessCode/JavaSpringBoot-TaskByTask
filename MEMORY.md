@@ -3,7 +3,7 @@ Cross-session project memory. Max ~50 lines: summarize or prune outdated info th
 *Note for AI Agent: The sections below are an initial baseline; feel free to add, merge, or remove sections as needed as the project evolves.*
 
 ## Current State
-- **Phase:** Foundation completed (`000-foundation`). Base architecture, Flyway schema (`V1__init_schema.sql`), Testcontainers base, RFC 7807 global exception handling in Spanish, Keyset pagination codec, RateLimitService (Bucket4j+Caffeine), DateTimeProvider (09:00 AM & overdue rules), and Spring Security with JDBC sessions and CSRF are implemented and verified (75 tests passing).
+- **Phase:** `001-auth-and-users` completed (`RF-01` to `RF-05`). Base architecture (`000-foundation`), Flyway schema (`V1__init_schema.sql`), Testcontainers base, RFC 7807 global exception handling in Spanish, Keyset pagination codec, RateLimitService (Bucket4j+Caffeine), DateTimeProvider (09:00 AM & overdue rules), Spring Security with JDBC sessions (`PRINCIPAL_NAME = user.id`) and CSRF, atomic user registration with `"Personal"` group + `CREATOR` membership + 8 single-use recovery codes, session login/logout (with optional push subscription cleanup), timing-safe password recovery, profile & preferences (`GET`/`PATCH /api/v1/users/me`), password change preserving current session, physical recovery code regeneration, and cascading account deletion with `scheduled_tasks` job cleanup are implemented and verified (113 tests passing).
 - **Requirements Baseline:** Vision (`docs/TaskByTask-SVD.md` v1.0) and Software Requirements (`docs/TaskByTask-SRS.md` v1.0) are complete and frozen, separating **MVP** (individual groups, tasks, tags, basic filters, browser due-date notifications) from **Posterior** (shared groups up to 5 members, roles, subtasks, fixed reminders, Brevo email API, Analyst metrics, SSE real-time updates).
 - **Persistence:** PostgreSQL hosted on Supabase (used strictly as a database, `public` schema only) managed via Flyway and Spring Data JPA (`ddl-auto=validate`).
 
@@ -22,5 +22,5 @@ Cross-session project memory. Max ~50 lines: summarize or prune outdated info th
 
 ## Next Steps
 - [x] Create and execute `docs/specs/000-foundation/` (`spec.md`, `plan.md`, `tasks.md`): configure `pom.xml` dependencies, Spotless, Flyway baseline (`V1__init_schema.sql` with RNF-20 extensible tables), `Testcontainers` base class, RFC 7807 `GlobalExceptionHandler`, Keyset pagination codec, RateLimitService, DateTimeProvider, and base `SecurityFilterChain`.
-- [ ] Draft and implement `docs/specs/001-auth-and-users/` (`RF-01` to `RF-05`: signup with `"Personal"` group + 8 recovery codes, session login/logout, profile/timezone preferences, account deletion).
+- [x] Draft and implement `docs/specs/001-auth-and-users/` (`RF-01` to `RF-05`: signup with `"Personal"` group + 8 recovery codes, session login/logout, profile/timezone preferences, account deletion).
 - [ ] Draft and implement `docs/specs/002-groups/`, `docs/specs/003-tasks-and-tags/`, and `docs/specs/004-notifications/` to complete the MVP.

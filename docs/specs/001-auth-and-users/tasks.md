@@ -1,7 +1,7 @@
 # Lista de Tareas: 001-auth-and-users (Autenticación y Gestión de Usuarios)
 
 **Fase:** 001-auth-and-users  
-**Estado:** pending (lista de tareas desglosada y lista para ejecución secuencial)  
+**Estado:** completed (todas las tareas implementadas y verificadas)  
 **Fecha:** 2026-11-10  
 **Autor:** SDD Planner Agent  
 **Referencias:**
@@ -133,7 +133,7 @@
     - Crear `UserAccountDeletionIntegrationTest` verificando borrado en cascada, cancelación de jobs en `scheduled_tasks`, revocación de sesiones, y protección ante contraseña errónea.
   - **Criterio de finalización (Done when):** `./mvnw test -Dtest=UserAccountDeletionIntegrationTest` pasa al 100%.
 
-- [ ] **T9: Verificación de calidad, formateo Spotless y suite completa de pruebas**
+- [x] **T9: Verificación de calidad, formateo Spotless y suite completa de pruebas**
   - **Requisitos cubiertos:** Todos los requisitos del módulo, Constitución Principios 3 y 6.
   - **Archivos a verificar:** Todo el repositorio.
   - **Descripción:** Ejecutar `./mvnw spotless:apply` seguido de `./mvnw spotless:check compile test-compile`. Ejecutar `./mvnw test` asegurando que el 100% de las pruebas (unitarias e integración con Testcontainers) pasen limpiamente sin advertencias ni regresiones.
