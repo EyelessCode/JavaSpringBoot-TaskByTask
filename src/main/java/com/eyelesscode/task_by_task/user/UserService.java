@@ -1,17 +1,32 @@
 package com.eyelesscode.task_by_task.user;
 
+import com.eyelesscode.task_by_task.auth.RecoveryCode;
+import com.eyelesscode.task_by_task.auth.RecoveryCodeGenerator;
 import com.eyelesscode.task_by_task.auth.RecoveryCodeRepository;
+import com.eyelesscode.task_by_task.auth.dto.MessageResponse;
 import com.eyelesscode.task_by_task.shared.error.BadRequestException;
 import com.eyelesscode.task_by_task.shared.error.ResourceConflictException;
 import com.eyelesscode.task_by_task.shared.error.ResourceNotFoundException;
 import com.eyelesscode.task_by_task.shared.security.SecurityUtils;
 import com.eyelesscode.task_by_task.shared.time.DateTimeProvider;
+import com.eyelesscode.task_by_task.user.dto.ChangePasswordRequest;
+import com.eyelesscode.task_by_task.user.dto.RecoveryCodesResponse;
+import com.eyelesscode.task_by_task.user.dto.RegenerateRecoveryCodesRequest;
 import com.eyelesscode.task_by_task.user.dto.UpdateProfileRequest;
 import com.eyelesscode.task_by_task.user.dto.UserResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.time.DateTimeException;
+import java.time.Instant;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.session.FindByIndexNameSessionRepository;
+import org.springframework.session.Session;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,17 +34,26 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private static final Set<String> ALLOWED_TIME_FORMATS = Set.of("24H", "12H");
+    private static final String WRONG_PASSWORD_TITLE = "Contraseña incorrecta";
+    private static final String WRONG_CURRENT_PASSWORD_DETAIL =
+            "La contraseña actual ingresada es incorrecta";
 
     private final UserRepository userRepository;
     private final RecoveryCodeRepository recoveryCodeRepository;
+    private final FindByIndexNameSessionRepository<? extends Session> sessionRepository;
+    private final PasswordEncoder passwordEncoder;
     private final DateTimeProvider dateTimeProvider;
 
     public UserService(
             UserRepository userRepository,
             RecoveryCodeRepository recoveryCodeRepository,
+            FindByIndexNameSessionRepository<? extends Session> sessionRepository,
+            PasswordEncoder passwordEncoder,
             DateTimeProvider dateTimeProvider) {
         this.userRepository = userRepository;
         this.recoveryCodeRepository = recoveryCodeRepository;
+        this.sessionRepository = sessionRepository;
+        this.passwordEncoder = passwordEncoder;
         this.dateTimeProvider = dateTimeProvider;
     }
 
@@ -111,6 +135,63 @@ public class UserService {
 
         int remainingCodes = (int) recoveryCodeRepository.countByUserIdAndUsedFalse(userId);
         return UserMapper.toResponse(user, remainingCodes);
+    }
+
+    @Transactional
+    public MessageResponse changePassword(
+            ChangePasswordRequest request, HttpServletRequest httpRequest) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        User user =
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            throw new BadRequestException(WRONG_PASSWORD_TITLE, WRONG_CURRENT_PASSWORD_DETAIL);
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        user.setUpdatedAt(dateTimeProvider.now());
+        userRepository.save(user);
+
+        HttpSession currentHttpSession = httpRequest.getSession(false);
+        String currentSessionId = currentHttpSession != null ? currentHttpSession.getId() : null;
+
+        Map<String, ? extends Session> userSessions =
+                sessionRepository.findByPrincipalName(String.valueOf(userId));
+        for (String sessionId : userSessions.keySet()) {
+            if (!sessionId.equals(currentSessionId)) {
+                sessionRepository.deleteById(sessionId);
+            }
+        }
+
+        return new MessageResponse("Contraseña actualizada exitosamente");
+    }
+
+    @Transactional
+    public RecoveryCodesResponse regenerateRecoveryCodes(RegenerateRecoveryCodesRequest request) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        User user =
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            throw new BadRequestException(WRONG_PASSWORD_TITLE, WRONG_CURRENT_PASSWORD_DETAIL);
+        }
+
+        recoveryCodeRepository.deleteByUserId(userId);
+
+        Instant now = dateTimeProvider.now();
+        List<String> plaintextCodes = RecoveryCodeGenerator.generateCodes();
+        List<RecoveryCode> recoveryCodeEntities = new ArrayList<>(plaintextCodes.size());
+        for (String plainCode : plaintextCodes) {
+            recoveryCodeEntities.add(
+                    new RecoveryCode(user, passwordEncoder.encode(plainCode), false, null, now));
+        }
+        recoveryCodeRepository.saveAll(recoveryCodeEntities);
+
+        return new RecoveryCodesResponse(plaintextCodes);
     }
 
     private String validateTimezone(String timezone) {

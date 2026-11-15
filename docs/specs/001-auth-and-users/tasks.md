@@ -104,7 +104,7 @@
     - Crear `UserProfileIntegrationTest` verificando consulta de perfil, actualización parcial, 400 ante time_format inválido, 409 ante email/username ocupado por otro usuario, y actualización sin conflicto con el propio valor.
   - **Criterio de finalización (Done when):** `./mvnw test -Dtest=UserProfileIntegrationTest` pasa al 100%.
 
-- [ ] **T7: Cambio de contraseña y regeneración de códigos (`UserService.changePassword`, `UserService.regenerateRecoveryCodes`)**
+- [x] **T7: Cambio de contraseña y regeneración de códigos (`UserService.changePassword`, `UserService.regenerateRecoveryCodes`)**
   - **Requisitos cubiertos:** AUTH-REQ-21, AUTH-REQ-22, AUTH-REQ-23, AUTH-REQ-24, EC-06, EC-10, RNF-05, RNF-09.
   - **Archivos a crear/modificar:**
     - `src/main/java/com/eyelesscode/task_by_task/user/dto/ChangePasswordRequest.java`
