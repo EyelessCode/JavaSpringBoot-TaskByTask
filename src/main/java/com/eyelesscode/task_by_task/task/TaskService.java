@@ -7,11 +7,13 @@ import com.eyelesscode.task_by_task.shared.security.SecurityUtils;
 import com.eyelesscode.task_by_task.shared.time.DateTimeProvider;
 import com.eyelesscode.task_by_task.tag.Tag;
 import com.eyelesscode.task_by_task.tag.TagMapper;
+import com.eyelesscode.task_by_task.tag.TagRepository;
 import com.eyelesscode.task_by_task.tag.TagService;
 import com.eyelesscode.task_by_task.tag.dto.TagResponse;
 import com.eyelesscode.task_by_task.task.dto.CreateTaskRequest;
 import com.eyelesscode.task_by_task.task.dto.TaskPatchValidator;
 import com.eyelesscode.task_by_task.task.dto.TaskResponse;
+import com.eyelesscode.task_by_task.task.dto.UpdateTaskCompletionRequest;
 import com.eyelesscode.task_by_task.task.dto.UpdateTaskRequest;
 import com.eyelesscode.task_by_task.user.User;
 import com.eyelesscode.task_by_task.user.UserRepository;
@@ -37,6 +39,7 @@ public class TaskService {
     private final TaskTagRepository taskTagRepository;
     private final GroupRepository groupRepository;
     private final UserRepository userRepository;
+    private final TagRepository tagRepository;
     private final TagService tagService;
     private final TaskDueSchedulePort taskDueSchedulePort;
     private final DateTimeProvider dateTimeProvider;
@@ -46,6 +49,7 @@ public class TaskService {
             TaskTagRepository taskTagRepository,
             GroupRepository groupRepository,
             UserRepository userRepository,
+            TagRepository tagRepository,
             TagService tagService,
             TaskDueSchedulePort taskDueSchedulePort,
             DateTimeProvider dateTimeProvider) {
@@ -53,6 +57,7 @@ public class TaskService {
         this.taskTagRepository = taskTagRepository;
         this.groupRepository = groupRepository;
         this.userRepository = userRepository;
+        this.tagRepository = tagRepository;
         this.tagService = tagService;
         this.taskDueSchedulePort = taskDueSchedulePort;
         this.dateTimeProvider = dateTimeProvider;
@@ -236,6 +241,85 @@ public class TaskService {
         }
 
         return TaskMapper.toResponse(task, tagResponses, dateTimeProvider, userZone, now);
+    }
+
+    @Transactional
+    public TaskResponse updateCompletion(Long taskId, UpdateTaskCompletionRequest request) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        Task task =
+                taskRepository
+                        .findByIdForUpdate(taskId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Tarea no encontrada"));
+        if (!task.getGroup().getCreator().getId().equals(userId)) {
+            throw new AccessDeniedException("No tiene permisos para realizar esta acción");
+        }
+
+        ZoneId userZone = dateTimeProvider.parseZoneId(task.getGroup().getCreator().getTimezone());
+        Instant now = dateTimeProvider.now().truncatedTo(ChronoUnit.MICROS);
+        boolean targetCompleted = request.completed();
+
+        if (targetCompleted != task.isCompleted()) {
+            task.setCompleted(targetCompleted);
+            task.setCompletedAt(targetCompleted ? now : null);
+            task.setUpdatedAt(now);
+            taskRepository.save(task);
+            if (targetCompleted) {
+                taskDueSchedulePort.cancel(task.getId());
+            } else {
+                syncDueSchedule(task, userZone, now);
+            }
+        }
+
+        List<TagResponse> tags =
+                taskTagRepository.findByTaskIdsOrderByTagNameAndId(List.of(task.getId())).stream()
+                        .map(taskTag -> TagMapper.toResponse(taskTag.getTag()))
+                        .toList();
+
+        return TaskMapper.toResponse(task, tags, dateTimeProvider, userZone, now);
+    }
+
+    @Transactional
+    public void deleteTask(Long taskId) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        Task task =
+                taskRepository
+                        .findByIdForUpdate(taskId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Tarea no encontrada"));
+        if (!task.getGroup().getCreator().getId().equals(userId)) {
+            throw new AccessDeniedException("No tiene permisos para realizar esta acción");
+        }
+
+        taskDueSchedulePort.cancel(task.getId());
+        taskRepository.delete(task);
+        taskRepository.flush();
+    }
+
+    @Transactional
+    public void detachTagFromTask(Long taskId, Long tagId) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        Task task =
+                taskRepository
+                        .findByIdWithGroupAndCreator(taskId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Tarea no encontrada"));
+        if (!task.getGroup().getCreator().getId().equals(userId)) {
+            throw new AccessDeniedException("No tiene permisos para realizar esta acción");
+        }
+
+        Tag tag =
+                tagRepository
+                        .findByIdWithGroupAndCreator(tagId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Etiqueta no encontrada"));
+        if (!tag.getGroup().getCreator().getId().equals(userId)) {
+            throw new AccessDeniedException("No tiene permisos para realizar esta acción");
+        }
+
+        TaskTag taskTag = taskTagRepository.findById(new TaskTagId(taskId, tagId)).orElse(null);
+        if (taskTag == null || !tag.getGroup().getId().equals(task.getGroup().getId())) {
+            throw new ResourceNotFoundException("La etiqueta no está asociada a esta tarea");
+        }
+
+        taskTagRepository.delete(taskTag);
+        taskTagRepository.flush();
     }
 
     private Group loadOwnedGroup(Long groupId, Long userId) {

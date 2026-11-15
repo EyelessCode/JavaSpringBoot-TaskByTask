@@ -2,12 +2,14 @@ package com.eyelesscode.task_by_task.task;
 
 import com.eyelesscode.task_by_task.task.dto.CreateTaskRequest;
 import com.eyelesscode.task_by_task.task.dto.TaskResponse;
+import com.eyelesscode.task_by_task.task.dto.UpdateTaskCompletionRequest;
 import com.eyelesscode.task_by_task.task.dto.UpdateTaskRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -47,5 +49,27 @@ public class TaskController {
     public ResponseEntity<TaskResponse> updateTask(
             @PathVariable Long taskId, @RequestBody UpdateTaskRequest request) {
         return ResponseEntity.ok(taskService.updateTask(taskId, request));
+    }
+
+    @PatchMapping("/tasks/{taskId}/completion")
+    @Operation(summary = "Marcar o desmarcar una tarea como completada")
+    public ResponseEntity<TaskResponse> updateCompletion(
+            @PathVariable Long taskId, @Valid @RequestBody UpdateTaskCompletionRequest request) {
+        return ResponseEntity.ok(taskService.updateCompletion(taskId, request));
+    }
+
+    @DeleteMapping("/tasks/{taskId}")
+    @Operation(summary = "Eliminar una tarea")
+    public ResponseEntity<Void> deleteTask(@PathVariable Long taskId) {
+        taskService.deleteTask(taskId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/tasks/{taskId}/tags/{tagId}")
+    @Operation(summary = "Desasociar una etiqueta de una tarea")
+    public ResponseEntity<Void> detachTagFromTask(
+            @PathVariable Long taskId, @PathVariable Long tagId) {
+        taskService.detachTagFromTask(taskId, tagId);
+        return ResponseEntity.noContent().build();
     }
 }

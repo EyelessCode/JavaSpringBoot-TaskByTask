@@ -110,7 +110,7 @@
     - Escribir pruebas unitarias (`UpdateTaskRequestDeserializerTest`) e integración (`TaskUpdateIntegrationTest`) cubriendo `{}` inerte, `EC-02`, `EC-03`, `EC-04`, `EC-05`, `EC-11` y actualizaciones concurrentes (`EC-10`).
   - **Criterio de finalización (Done when):** `./mvnw spotless:check compile test-compile` y `./mvnw test -Dtest=UpdateTaskRequestDeserializerTest,TaskUpdateIntegrationTest` pasan al 100%.
 
-- [ ] **T6: Completado, eliminación de tareas y desasociación selectiva de etiquetas (`PATCH /completion`, `DELETE /tasks/{taskId}`, `DELETE /tasks/{taskId}/tags/{tagId}`)**
+- [x] **T6: Completado, eliminación de tareas y desasociación selectiva de etiquetas (`PATCH /completion`, `DELETE /tasks/{taskId}`, `DELETE /tasks/{taskId}/tags/{tagId}`)**
   - **Requisitos cubiertos:** TSK-REQ-08, TSK-REQ-09, TSK-REQ-10, TSK-REQ-11, TAG-REQ-07, TAG-REQ-09, TSK-REQ-22 a 27, EC-02, EC-06, EC-10.
   - **Archivos a crear/modificar:**
     - `src/main/java/com/eyelesscode/task_by_task/task/dto/UpdateTaskCompletionRequest.java`
