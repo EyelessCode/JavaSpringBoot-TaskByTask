@@ -10,15 +10,21 @@ import com.eyelesscode.task_by_task.tag.TagMapper;
 import com.eyelesscode.task_by_task.tag.TagService;
 import com.eyelesscode.task_by_task.tag.dto.TagResponse;
 import com.eyelesscode.task_by_task.task.dto.CreateTaskRequest;
+import com.eyelesscode.task_by_task.task.dto.TaskPatchValidator;
 import com.eyelesscode.task_by_task.task.dto.TaskResponse;
+import com.eyelesscode.task_by_task.task.dto.UpdateTaskRequest;
 import com.eyelesscode.task_by_task.user.User;
 import com.eyelesscode.task_by_task.user.UserRepository;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -121,6 +127,115 @@ public class TaskService {
                         .toList();
 
         return TaskMapper.toResponse(task, tags, dateTimeProvider, userZone, now);
+    }
+
+    @Transactional
+    public TaskResponse updateTask(Long taskId, UpdateTaskRequest request) {
+        TaskPatchValidator.validate(request);
+
+        Long userId = SecurityUtils.getCurrentUserId();
+        Task task =
+                taskRepository
+                        .findByIdForUpdate(taskId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Tarea no encontrada"));
+        if (!task.getGroup().getCreator().getId().equals(userId)) {
+            throw new AccessDeniedException("No tiene permisos para realizar esta acción");
+        }
+
+        ZoneId userZone = dateTimeProvider.parseZoneId(task.getGroup().getCreator().getTimezone());
+        Instant now = dateTimeProvider.now().truncatedTo(ChronoUnit.MICROS);
+
+        if (request.isEmptyPatch()) {
+            List<TagResponse> existingTags =
+                    taskTagRepository
+                            .findByTaskIdsOrderByTagNameAndId(List.of(task.getId()))
+                            .stream()
+                            .map(taskTag -> TagMapper.toResponse(taskTag.getTag()))
+                            .toList();
+            return TaskMapper.toResponse(task, existingTags, dateTimeProvider, userZone, now);
+        }
+
+        LocalDate resultingDueDate;
+        LocalTime resultingDueTime;
+        if (request.dueDate().present()
+                && request.dueDate().value() == null
+                && !request.dueTime().present()) {
+            resultingDueDate = null;
+            resultingDueTime = null;
+        } else {
+            resultingDueDate =
+                    request.dueDate().present() ? request.dueDate().value() : task.getDueDate();
+            resultingDueTime =
+                    request.dueTime().present() ? request.dueTime().value() : task.getDueTime();
+        }
+        dateTimeProvider.validateDueDateAndTime(resultingDueDate, resultingDueTime);
+
+        if (request.title().present()) {
+            task.setTitle(request.title().value());
+        }
+        if (request.description().present()) {
+            task.setDescription(request.description().value());
+        }
+        task.setDueDate(resultingDueDate);
+        task.setDueTime(resultingDueTime);
+
+        List<TagResponse> tagResponses;
+        if (request.tags().present()) {
+            List<String> targetTagNames =
+                    request.tags().value() != null ? request.tags().value() : List.of();
+            List<Tag> resolvedTags =
+                    targetTagNames.isEmpty()
+                            ? List.of()
+                            : tagService.resolveOrCreateTags(task.getGroup(), targetTagNames, now);
+
+            List<TaskTag> existingTaskTags =
+                    taskTagRepository.findByTaskIdsOrderByTagNameAndId(List.of(task.getId()));
+            Set<Long> targetTagIds =
+                    resolvedTags.stream().map(Tag::getId).collect(Collectors.toSet());
+            Set<Long> existingTagIds =
+                    existingTaskTags.stream()
+                            .map(tt -> tt.getTag().getId())
+                            .collect(Collectors.toSet());
+
+            List<TaskTag> toRemove =
+                    existingTaskTags.stream()
+                            .filter(tt -> !targetTagIds.contains(tt.getTag().getId()))
+                            .toList();
+            if (!toRemove.isEmpty()) {
+                taskTagRepository.deleteAllInBatch(toRemove);
+            }
+
+            List<TaskTag> toInsert =
+                    resolvedTags.stream()
+                            .filter(tag -> !existingTagIds.contains(tag.getId()))
+                            .map(tag -> new TaskTag(task, tag, now))
+                            .toList();
+            if (!toInsert.isEmpty()) {
+                taskTagRepository.saveAll(toInsert);
+            }
+
+            tagResponses =
+                    resolvedTags.stream()
+                            .sorted(Comparator.comparing(Tag::getName).thenComparing(Tag::getId))
+                            .map(TagMapper::toResponse)
+                            .toList();
+        } else {
+            tagResponses =
+                    taskTagRepository
+                            .findByTaskIdsOrderByTagNameAndId(List.of(task.getId()))
+                            .stream()
+                            .map(taskTag -> TagMapper.toResponse(taskTag.getTag()))
+                            .toList();
+        }
+
+        task.setUpdatedAt(now);
+        taskRepository.save(task);
+
+        if (request.dueDate().present() || request.dueTime().present()) {
+            syncDueSchedule(task, userZone, now);
+        }
+
+        return TaskMapper.toResponse(task, tagResponses, dateTimeProvider, userZone, now);
     }
 
     private Group loadOwnedGroup(Long groupId, Long userId) {

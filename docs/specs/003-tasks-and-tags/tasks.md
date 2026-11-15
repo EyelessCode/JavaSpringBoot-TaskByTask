@@ -93,7 +93,7 @@
     - Crear `TaskCreationAndDetailIntegrationTest` cubriendo creación con/sin fechas/etiquetas (`tags: null` -> `[]`, deduplicación `EC-05`), `EC-01` (fechas pasadas, hoy antes/después de 09:00 AM en zona horaria local y límite `23:59:59.999` mediante `Clock` determinista), rechazo `dueTime` sin `dueDate`, errores `400`/`401`/`403`/`404` y `EC-11`.
   - **Criterio de finalización (Done when):** `./mvnw spotless:check compile test-compile` y `./mvnw test -Dtest=TaskCreationAndDetailIntegrationTest` pasan al 100%.
 
-- [ ] **T5: Edición parcial explícita de tareas (`PATCH /api/v1/tasks/{taskId}`) con `PatchField` y Jackson 3**
+- [x] **T5: Edición parcial explícita de tareas (`PATCH /api/v1/tasks/{taskId}`) con `PatchField` y Jackson 3**
   - **Requisitos cubiertos:** TSK-REQ-02, TSK-REQ-03, TSK-REQ-04, TSK-REQ-05, TSK-REQ-07, TSK-REQ-11, TSK-REQ-22 a 27, TAG-REQ-01, TAG-REQ-02, TAG-REQ-09, EC-02, EC-03, EC-04, EC-05, EC-10, EC-11.
   - **Archivos a crear/modificar:**
     - `src/main/java/com/eyelesscode/task_by_task/task/dto/PatchField.java`
