@@ -79,7 +79,7 @@
     - Crear `TaskMapperTest` verificando mapeo completo, `assignedUserId = null`, orden de tags y que `completed = true` siempre resulte en `overdue = false` incluso con fecha pasada.
   - **Criterio de finalización (Done when):** `./mvnw spotless:check compile test-compile` y `./mvnw test -Dtest=TaskMapperTest,ApplicationIntegrationTest` pasan al 100% (validando `ddl-auto=validate`).
 
-- [ ] **T4: Creación y consulta de detalle de tareas (`POST /api/v1/groups/{groupId}/tasks` y `GET /api/v1/tasks/{taskId}`)**
+- [x] **T4: Creación y consulta de detalle de tareas (`POST /api/v1/groups/{groupId}/tasks` y `GET /api/v1/tasks/{taskId}`)**
   - **Requisitos cubiertos:** TSK-REQ-01, TSK-REQ-02, TSK-REQ-03, TSK-REQ-04, TSK-REQ-05, TSK-REQ-06, TSK-REQ-11, TSK-REQ-22 a 27, TAG-REQ-01, TAG-REQ-02, EC-01, EC-05, EC-11.
   - **Archivos a crear:**
     - `src/main/java/com/eyelesscode/task_by_task/task/dto/CreateTaskRequest.java`
