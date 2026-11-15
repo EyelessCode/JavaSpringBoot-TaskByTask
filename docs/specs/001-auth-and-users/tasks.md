@@ -31,7 +31,7 @@
   - **Descripción:** Implementar las entidades JPA bajo Pure Java 21 (sin Lombok ni anotaciones generadoras) alineadas 1:1 con `V1__init_schema.sql` para que `ddl-auto=validate` pase limpiamente. Definir los repositorios Spring Data JPA correspondientes con consultas para búsquedas case-insensitive por email/username, conteo y borrado físico de códigos de recuperación, y eliminación de push subscription por endpoint.
   - **Criterio de finalización (Done when):** `./mvnw test -Dtest=ApplicationIntegrationTest` ejecuta contra Testcontainers PostgreSQL y valida que Hibernate arranca sin errores de validación de esquema (`ddl-auto=validate`).
 
-- [ ] **T2: Funciones puras de utilidad: Generador de Códigos (`RecoveryCodeGenerator`) y `SecurityUtils`**
+- [x] **T2: Funciones puras de utilidad: Generador de Códigos (`RecoveryCodeGenerator`) y `SecurityUtils`**
   - **Requisitos cubiertos:** AUTH-REQ-06, AUTH-REQ-13, EC-11.
   - **Archivos a crear:**
     - `src/main/java/com/eyelesscode/task_by_task/auth/RecoveryCodeGenerator.java`
