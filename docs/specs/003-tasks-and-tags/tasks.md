@@ -57,7 +57,7 @@
     - Crear pruebas unitarias (`TagNameRulesTest`, `TagMapperTest`) e integración (`TagEndpointsIntegrationTest`) verificando `GET`/`POST`/`DELETE`, comodines SQL (`\`, `%`, `_`), cascada sobre `task_tags` y carrera concurrente con hilos paralelos (`CountDownLatch`).
   - **Criterio de finalización (Done when):** `./mvnw spotless:check compile test-compile` y `./mvnw test -Dtest=TagNameRulesTest,TagMapperTest,TagEndpointsIntegrationTest` pasan al 100%.
 
-- [ ] **T3: Entidades `Task` y `TaskTag`, repositorios base, frontera `scheduled_tasks` y `TaskMapper`**
+- [x] **T3: Entidades `Task` y `TaskTag`, repositorios base, frontera `scheduled_tasks` y `TaskMapper`**
   - **Requisitos cubiertos:** TSK-REQ-01, TSK-REQ-05, TSK-REQ-06, TSK-REQ-11, RNF-20, FND-REQ-29, FND-REQ-30, FND-REQ-31, EC-02.
   - **Archivos a crear:**
     - `src/main/java/com/eyelesscode/task_by_task/task/Task.java`
