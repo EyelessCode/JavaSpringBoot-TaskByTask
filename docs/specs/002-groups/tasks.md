@@ -59,7 +59,7 @@
     - Crear `GroupPaginationIntegrationTest` verificando que el grupo `"Personal"` aparezca siempre primero, paginación progresiva multi-página sin duplicados ni omisiones, desempate por `id ASC` ante igual `created_at`, página vacía (`content: []`, `hasNext: false`, `nextCursor: null`, `size: 0`) cuando el cursor apunta tras el último elemento o a una tupla eliminada/ajena, y rechazos `400` ante `limit` fuera de `1..50`, `limit` no numérico o cursores corruptos/de otro tipo.
   - **Criterio de finalización (Done when):** `./mvnw spotless:check` y `./mvnw test -Dtest=GroupPaginationIntegrationTest` pasan al 100%.
 
-- [ ] **T4: Renombrado y eliminación de grupos con protección del grupo `"Personal"` y limpieza de `scheduled_tasks` (`PATCH` y `DELETE /api/v1/groups/{groupId}`)**
+- [x] **T4: Renombrado y eliminación de grupos con protección del grupo `"Personal"` y limpieza de `scheduled_tasks` (`PATCH` y `DELETE /api/v1/groups/{groupId}`)**
   - **Requisitos cubiertos:** GRP-REQ-14, GRP-REQ-15, GRP-REQ-16, GRP-REQ-17, GRP-REQ-18, GRP-REQ-19, GRP-REQ-20, GRP-REQ-21, GRP-REQ-22, GRP-REQ-23, GRP-REQ-24, GRP-REQ-25, EC-01, EC-02, EC-04, EC-05, EC-06, EC-10, EC-11, EC-12, RF-06, RF-07, RNF-17.
   - **Archivos a crear/modificar:**
     - `src/main/java/com/eyelesscode/task_by_task/group/GroupService.java`
