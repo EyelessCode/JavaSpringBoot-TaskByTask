@@ -3,7 +3,7 @@ Cross-session project memory. Max ~50 lines: summarize or prune outdated info th
 *Note for AI Agent: The sections below are an initial baseline; feel free to add, merge, or remove sections as needed as the project evolves.*
 
 ## Current State
-- **Phase:** `002-groups` completed (`RF-06`, `RF-07`, `RF-24`) on top of `001-auth-and-users` (`RF-01`–`RF-05`) and `000-foundation`. Implemented full CRUD & keyset pagination for individual groups and `"Personal"` protection (`POST/GET/PATCH/DELETE /api/v1/groups/**`), strict `GroupCursor` validation, atomic `CREATOR` membership, pessimistic locking (`SELECT ... FOR UPDATE`) and selective `scheduled_tasks` cleanup before cascade deletion, and verified the full suite (131 tests passing).
+- **Phase:** `003-tasks-and-tags` completed (`RF-12`–`RF-19`, `RF-21`–`RF-23`, `RF-25`, `RF-28`) on top of `002-groups`, `001-auth-and-users`, `000-foundation`, and Swagger/dev fixes (`springdoc` `3.2.0`, `docker-compose.dev.yml`). Implemented group-scoped tag catalog & auto-creation, task CRUD, explicit `PATCH` partial updates, completion toggling, deletion, tag detaching, move/copy across groups, and Keyset pagination with composite ordering/filtering; full suite passes (**180 tests passing**, 0 failures/skipped).
 - **Requirements Baseline:** Vision (`docs/TaskByTask-SVD.md` v1.0) and Software Requirements (`docs/TaskByTask-SRS.md` v1.0) are complete and frozen, separating **MVP** (individual groups, tasks, tags, basic filters, browser due-date notifications) from **Posterior** (shared groups up to 5 members, roles, subtasks, fixed reminders, Brevo email API, Analyst metrics, SSE real-time updates).
 - **Persistence:** PostgreSQL hosted on Supabase (used strictly as a database, `public` schema only) managed via Flyway and Spring Data JPA (`ddl-auto=validate`).
 
@@ -19,9 +19,12 @@ Cross-session project memory. Max ~50 lines: summarize or prune outdated info th
 - **In-Memory `Bucket4j` + `Caffeine`:** Protects login/auth endpoints from brute force (`RNF-06`) with bounded memory (`maximumSize` + TTL) and zero database IOPS cost.
 - **`db-scheduler` + VAPID Web Push (BouncyCastle):** Lightweight single-table PostgreSQL scheduler that supports deterministic `reschedule`/`cancel` by task ID when due dates or completion states change (`RF-13`, `RF-14`, `RF-28`).
 - **Posterior Integrations (Brevo HTTP API + SSE):** HTTP API avoids free-tier hosting SMTP port blocks (`RF-11`); `SseEmitter` provides lightweight unidirectional real-time updates (`RF-33`) without WebSocket/STOMP complexity.
+- **Tasks & Tags (`003-tasks-and-tags`):**
+  - `PatchField<T>` + Jackson 3 `UpdateTaskRequestDeserializer` distinguish omitted vs `null` vs value cleanly, while `StrictLocalDateDeserializer`/`StrictLocalTimeDeserializer` reject empty/blank date/time strings with `400`.
+  - Tag resolution uses native `INSERT ... ON CONFLICT (group_id, TRIM(LOWER(name))) DO NOTHING RETURNING id` so concurrent tag creation is race-free.
+  - `TaskDueSchedulePort` (`JdbcTaskDueScheduleAdapter`) isolates `scheduled_tasks` writes cleanly ahead of `004-notifications`.
+  - `TaskQueryRepositoryImpl` builds dynamic JPQL Keyset seek predicates matching `ORDER BY completed ASC, dueDate ASC NULLS LAST, dueTime ASC NULLS LAST, createdAt ASC, id ASC`, truncating persisted timestamps to `ChronoUnit.MICROS` for PostgreSQL `TIMESTAMPTZ` cursor parity.
 
 ## Next Steps
-- [x] Create and execute `docs/specs/000-foundation/` (`spec.md`, `plan.md`, `tasks.md`).
-- [x] Draft and implement `docs/specs/001-auth-and-users/` (`RF-01`–`RF-05`: signup with `"Personal"` group + 8 recovery codes, session login/logout, profile/timezone preferences, account deletion).
-- [x] Draft and implement `docs/specs/002-groups/` (`RF-06`, `RF-07`, `RF-24`: individual group creation, keyset pagination with `"Personal"` first, detail, rename, and cascade deletion with `"Personal"` protection and `scheduled_tasks` cleanup).
-- [ ] Draft and implement `docs/specs/003-tasks-and-tags/` and `docs/specs/004-notifications/` to complete the MVP.
+- [x] Create and execute `docs/specs/000-foundation/`, `001-auth-and-users/`, `002-groups/`, and `003-tasks-and-tags/`.
+- [ ] Draft and implement `docs/specs/004-notifications/` (Web Push VAPID + `db-scheduler` due-date jobs) and `docs/specs/005-hardening/` to complete the MVP.

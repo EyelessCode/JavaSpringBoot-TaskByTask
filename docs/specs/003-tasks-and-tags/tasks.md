@@ -1,7 +1,7 @@
 # Lista de Tareas: 003-tasks-and-tags (Gestión de Tareas, Etiquetas por Grupo y Filtros Básicos)
 
 **Fase:** 003-tasks-and-tags  
-**Estado:** pending  
+**Estado:** completed  
 **Fecha:** 2026-11-15  
 **Autor:** SDD Planner Agent  
 **Referencias:**
@@ -155,7 +155,7 @@
     - Crear `TaskPaginationAndFilterIntegrationTest` probando recorrido multi-página con `limit = 1` y `limit = 2` a través de las 3 variantes temporales + `ALL`, empates `(created_at, id)`, filtros combinados, `search` con `%`, `_` y `\`, `groupIds` duplicados/vacíos/`404`-antes-`403`, cursores incompatibles/corruptos y lista completa de tags en respuestas de listado.
   - **Criterio de finalización (Done when):** `./mvnw spotless:check compile test-compile` y `./mvnw test -Dtest=TaskPaginationAndFilterIntegrationTest` pasan al 100%.
 
-- [ ] **T9: Verificación integral de calidad, formateo Spotless, suite completa de pruebas y actualización de `MEMORY.md`**
+- [x] **T9: Verificación integral de calidad, formateo Spotless, suite completa de pruebas y actualización de `MEMORY.md`**
   - **Requisitos cubiertos:** Todos los requisitos del módulo (`TSK-REQ-01` a `TSK-REQ-27`, `TAG-REQ-01` a `TAG-REQ-09`, `EC-01` a `EC-11`), Constitución Principios 3 y 6.
   - **Archivos a modificar/verificar:**
     - `MEMORY.md`
