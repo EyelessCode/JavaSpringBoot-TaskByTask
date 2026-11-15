@@ -76,7 +76,7 @@
     - Crear `AuthLoginLogoutIntegrationTest` verificando login exitoso, 401 genérico, rechazo por zona horaria inválida, rate limit 429 tras 5 intentos fallidos, y logout con eliminación de suscripción push.
   - **Criterio de finalización (Done when):** `./mvnw test -Dtest=AuthLoginLogoutIntegrationTest` pasa al 100%.
 
-- [ ] **T5: Recuperación de contraseña con códigos de un solo uso y mitigación de timing attack (`AuthService.recoverPassword`)**
+- [x] **T5: Recuperación de contraseña con códigos de un solo uso y mitigación de timing attack (`AuthService.recoverPassword`)**
   - **Requisitos cubiertos:** AUTH-REQ-13, AUTH-REQ-14, AUTH-REQ-15, AUTH-REQ-16, EC-03, EC-04, EC-05, EC-06, EC-11, EC-12, RNF-05.
   - **Archivos a crear/modificar:**
     - `src/main/java/com/eyelesscode/task_by_task/auth/dto/RecoverPasswordRequest.java`

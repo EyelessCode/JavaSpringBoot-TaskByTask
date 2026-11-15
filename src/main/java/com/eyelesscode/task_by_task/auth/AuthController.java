@@ -2,6 +2,8 @@ package com.eyelesscode.task_by_task.auth;
 
 import com.eyelesscode.task_by_task.auth.dto.LoginRequest;
 import com.eyelesscode.task_by_task.auth.dto.LogoutRequest;
+import com.eyelesscode.task_by_task.auth.dto.MessageResponse;
+import com.eyelesscode.task_by_task.auth.dto.RecoverPasswordRequest;
 import com.eyelesscode.task_by_task.auth.dto.RegisterRequest;
 import com.eyelesscode.task_by_task.auth.dto.RegisterResponse;
 import com.eyelesscode.task_by_task.user.dto.UserResponse;
@@ -46,5 +48,12 @@ public class AuthController {
             HttpServletResponse httpResponse) {
         authService.logout(request, httpRequest, httpResponse);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/recover-password")
+    public ResponseEntity<MessageResponse> recoverPassword(
+            @Valid @RequestBody RecoverPasswordRequest request, HttpServletRequest httpRequest) {
+        MessageResponse response = authService.recoverPassword(request, httpRequest);
+        return ResponseEntity.ok(response);
     }
 }

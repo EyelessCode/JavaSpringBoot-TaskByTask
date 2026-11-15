@@ -89,7 +89,7 @@ public class GlobalExceptionHandler {
             BadRequestException ex, HttpServletRequest request) {
         ProblemDetail problemDetail =
                 ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
-        problemDetail.setTitle("Solicitud inválida");
+        problemDetail.setTitle(ex.getTitle());
         problemDetail.setInstance(
                 URI.create(request.getRequestURI() != null ? request.getRequestURI() : "/"));
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);

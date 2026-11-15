@@ -2,6 +2,8 @@ package com.eyelesscode.task_by_task.auth;
 
 import com.eyelesscode.task_by_task.auth.dto.LoginRequest;
 import com.eyelesscode.task_by_task.auth.dto.LogoutRequest;
+import com.eyelesscode.task_by_task.auth.dto.MessageResponse;
+import com.eyelesscode.task_by_task.auth.dto.RecoverPasswordRequest;
 import com.eyelesscode.task_by_task.auth.dto.RegisterRequest;
 import com.eyelesscode.task_by_task.auth.dto.RegisterResponse;
 import com.eyelesscode.task_by_task.group.Group;
@@ -26,6 +28,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -35,6 +38,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.session.FindByIndexNameSessionRepository;
+import org.springframework.session.Session;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,12 +51,17 @@ public class AuthService {
     private static final String ROLE_CREATOR = "CREATOR";
     private static final String DUMMY_BCRYPT_HASH =
             "{bcrypt}$2a$10$7EqJtq98hPqEX7fNZaFWoOHi7mN7h0P9yC5O3L1s0U2xW6V9aZ3rO";
+    private static final String RECOVERY_FAILED_TITLE = "Recuperación fallida";
+    private static final String RECOVERY_FAILED_DETAIL =
+            "El correo electrónico o el código de recuperación son incorrectos, o el código ya fue"
+                    + " utilizado";
 
     private final UserRepository userRepository;
     private final GroupRepository groupRepository;
     private final GroupMembershipRepository groupMembershipRepository;
     private final RecoveryCodeRepository recoveryCodeRepository;
     private final PushSubscriptionRepository pushSubscriptionRepository;
+    private final FindByIndexNameSessionRepository<? extends Session> sessionRepository;
     private final PasswordEncoder passwordEncoder;
     private final RateLimitService rateLimitService;
     private final DateTimeProvider dateTimeProvider;
@@ -63,6 +72,7 @@ public class AuthService {
             GroupMembershipRepository groupMembershipRepository,
             RecoveryCodeRepository recoveryCodeRepository,
             PushSubscriptionRepository pushSubscriptionRepository,
+            FindByIndexNameSessionRepository<? extends Session> sessionRepository,
             PasswordEncoder passwordEncoder,
             RateLimitService rateLimitService,
             DateTimeProvider dateTimeProvider) {
@@ -71,6 +81,7 @@ public class AuthService {
         this.groupMembershipRepository = groupMembershipRepository;
         this.recoveryCodeRepository = recoveryCodeRepository;
         this.pushSubscriptionRepository = pushSubscriptionRepository;
+        this.sessionRepository = sessionRepository;
         this.passwordEncoder = passwordEncoder;
         this.rateLimitService = rateLimitService;
         this.dateTimeProvider = dateTimeProvider;
@@ -196,6 +207,57 @@ public class AuthService {
             session.invalidate();
         }
         SecurityContextHolder.clearContext();
+    }
+
+    @Transactional
+    public MessageResponse recoverPassword(
+            RecoverPasswordRequest request, HttpServletRequest httpRequest) {
+        rateLimitService.consumeOrThrow(
+                rateLimitService.buildPartitionKey(httpRequest, "recover-password"));
+
+        String normalizedEmail = request.email().trim().toLowerCase(Locale.ROOT);
+        String normalizedCode = RecoveryCodeGenerator.normalizeCode(request.recoveryCode());
+
+        Optional<User> optionalUser = userRepository.findByEmailIgnoreCase(normalizedEmail);
+        if (optionalUser.isEmpty()) {
+            passwordEncoder.matches(normalizedCode, DUMMY_BCRYPT_HASH);
+            throw new BadRequestException(RECOVERY_FAILED_TITLE, RECOVERY_FAILED_DETAIL);
+        }
+
+        User user = optionalUser.get();
+        List<RecoveryCode> unusedCodes = recoveryCodeRepository.findUnusedForUpdate(user.getId());
+        if (unusedCodes.isEmpty()) {
+            passwordEncoder.matches(normalizedCode, DUMMY_BCRYPT_HASH);
+            throw new BadRequestException(RECOVERY_FAILED_TITLE, RECOVERY_FAILED_DETAIL);
+        }
+
+        RecoveryCode matchedCode = null;
+        for (RecoveryCode candidate : unusedCodes) {
+            if (passwordEncoder.matches(normalizedCode, candidate.getCodeHash())) {
+                matchedCode = candidate;
+                break;
+            }
+        }
+
+        if (matchedCode == null) {
+            throw new BadRequestException(RECOVERY_FAILED_TITLE, RECOVERY_FAILED_DETAIL);
+        }
+
+        Instant now = dateTimeProvider.now();
+        int updatedRows = recoveryCodeRepository.markAsUsedIfUnused(matchedCode.getId(), now);
+        if (updatedRows != 1) {
+            throw new BadRequestException(RECOVERY_FAILED_TITLE, RECOVERY_FAILED_DETAIL);
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        user.setUpdatedAt(now);
+        userRepository.save(user);
+
+        Map<String, ? extends Session> activeSessions =
+                sessionRepository.findByPrincipalName(String.valueOf(user.getId()));
+        activeSessions.keySet().forEach(sessionRepository::deleteById);
+
+        return new MessageResponse("Contraseña restablecida exitosamente");
     }
 
     private String resolveAndValidateTimezone(String timezone) {
