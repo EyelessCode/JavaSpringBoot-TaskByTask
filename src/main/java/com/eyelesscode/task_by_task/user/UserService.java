@@ -10,6 +10,7 @@ import com.eyelesscode.task_by_task.shared.error.ResourceNotFoundException;
 import com.eyelesscode.task_by_task.shared.security.SecurityUtils;
 import com.eyelesscode.task_by_task.shared.time.DateTimeProvider;
 import com.eyelesscode.task_by_task.user.dto.ChangePasswordRequest;
+import com.eyelesscode.task_by_task.user.dto.DeleteAccountRequest;
 import com.eyelesscode.task_by_task.user.dto.RecoveryCodesResponse;
 import com.eyelesscode.task_by_task.user.dto.RegenerateRecoveryCodesRequest;
 import com.eyelesscode.task_by_task.user.dto.UpdateProfileRequest;
@@ -24,6 +25,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.session.Session;
@@ -37,24 +40,29 @@ public class UserService {
     private static final String WRONG_PASSWORD_TITLE = "Contraseña incorrecta";
     private static final String WRONG_CURRENT_PASSWORD_DETAIL =
             "La contraseña actual ingresada es incorrecta";
+    private static final String WRONG_DELETE_PASSWORD_DETAIL =
+            "La contraseña ingresada es incorrecta";
 
     private final UserRepository userRepository;
     private final RecoveryCodeRepository recoveryCodeRepository;
     private final FindByIndexNameSessionRepository<? extends Session> sessionRepository;
     private final PasswordEncoder passwordEncoder;
     private final DateTimeProvider dateTimeProvider;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserService(
             UserRepository userRepository,
             RecoveryCodeRepository recoveryCodeRepository,
             FindByIndexNameSessionRepository<? extends Session> sessionRepository,
             PasswordEncoder passwordEncoder,
-            DateTimeProvider dateTimeProvider) {
+            DateTimeProvider dateTimeProvider,
+            JdbcTemplate jdbcTemplate) {
         this.userRepository = userRepository;
         this.recoveryCodeRepository = recoveryCodeRepository;
         this.sessionRepository = sessionRepository;
         this.passwordEncoder = passwordEncoder;
         this.dateTimeProvider = dateTimeProvider;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Transactional(readOnly = true)
@@ -192,6 +200,38 @@ public class UserService {
         recoveryCodeRepository.saveAll(recoveryCodeEntities);
 
         return new RecoveryCodesResponse(plaintextCodes);
+    }
+
+    @Transactional
+    public void deleteAccount(DeleteAccountRequest request, HttpServletRequest httpRequest) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        User user =
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+            throw new BadRequestException(WRONG_PASSWORD_TITLE, WRONG_DELETE_PASSWORD_DETAIL);
+        }
+
+        jdbcTemplate.update(
+                "DELETE FROM scheduled_tasks WHERE task_instance IN ("
+                        + "SELECT 'task-due-' || t.id FROM tasks t JOIN groups g ON t.group_id ="
+                        + " g.id WHERE g.creator_id = ?)",
+                userId);
+
+        Map<String, ? extends Session> userSessions =
+                sessionRepository.findByPrincipalName(String.valueOf(userId));
+        userSessions.keySet().forEach(sessionRepository::deleteById);
+
+        userRepository.delete(user);
+        userRepository.flush();
+
+        HttpSession currentSession = httpRequest.getSession(false);
+        if (currentSession != null) {
+            currentSession.invalidate();
+        }
+        SecurityContextHolder.clearContext();
     }
 
     private String validateTimezone(String timezone) {

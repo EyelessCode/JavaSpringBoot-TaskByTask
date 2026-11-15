@@ -120,7 +120,7 @@
     - Crear `UserPasswordAndRecoveryCodesIntegrationTest` validando cambio de contraseña, preservación de sesión activa actual, eliminación física y entrega de 8 nuevos códigos, y rechazo 400 ante contraseña actual incorrecta.
   - **Criterio de finalización (Done when):** `./mvnw test -Dtest=UserPasswordAndRecoveryCodesIntegrationTest` pasa al 100%.
 
-- [ ] **T8: Eliminación definitiva de cuenta y cascada completa (`UserService.deleteAccount`)**
+- [x] **T8: Eliminación definitiva de cuenta y cascada completa (`UserService.deleteAccount`)**
   - **Requisitos cubiertos:** AUTH-REQ-25, AUTH-REQ-26, EC-08, EC-10, RF-05, RNF-10.
   - **Archivos a crear/modificar:**
     - `src/main/java/com/eyelesscode/task_by_task/user/dto/DeleteAccountRequest.java`

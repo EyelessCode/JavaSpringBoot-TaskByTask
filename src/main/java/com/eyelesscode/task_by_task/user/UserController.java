@@ -2,6 +2,7 @@ package com.eyelesscode.task_by_task.user;
 
 import com.eyelesscode.task_by_task.auth.dto.MessageResponse;
 import com.eyelesscode.task_by_task.user.dto.ChangePasswordRequest;
+import com.eyelesscode.task_by_task.user.dto.DeleteAccountRequest;
 import com.eyelesscode.task_by_task.user.dto.RecoveryCodesResponse;
 import com.eyelesscode.task_by_task.user.dto.RegenerateRecoveryCodesRequest;
 import com.eyelesscode.task_by_task.user.dto.UpdateProfileRequest;
@@ -9,6 +10,7 @@ import com.eyelesscode.task_by_task.user.dto.UserResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,5 +49,12 @@ public class UserController {
     public ResponseEntity<RecoveryCodesResponse> regenerateRecoveryCodes(
             @Valid @RequestBody RegenerateRecoveryCodesRequest request) {
         return ResponseEntity.ok(userService.regenerateRecoveryCodes(request));
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> deleteAccount(
+            @Valid @RequestBody DeleteAccountRequest request, HttpServletRequest httpRequest) {
+        userService.deleteAccount(request, httpRequest);
+        return ResponseEntity.noContent().build();
     }
 }
