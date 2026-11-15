@@ -1,7 +1,7 @@
 # Lista de Tareas: 002-groups (Gestión de Grupos Individuales y Grupo "Personal")
 
 **Fase:** 002-groups  
-**Estado:** ready  
+**Estado:** completed  
 **Fecha:** 2026-11-15  
 **Autor:** SDD Planner Agent  
 **Referencias:**
@@ -72,7 +72,7 @@
     - Crear `GroupRenameAndDeleteIntegrationTest` verificando renombrado de grupo individual y `"Personal"`, idempotencia con el mismo nombre, creación posterior de otro grupo llamado `"Personal"`, rechazo `409` al intentar borrar el propio `"Personal"`, precedencia `403` al intentar borrar el `"Personal"` de otro usuario, cascada completa (`tasks`, `tags`, `task_tags`, `group_memberships`) y limpieza selectiva de `scheduled_tasks`.
   - **Criterio de finalización (Done when):** `./mvnw spotless:check` y `./mvnw test -Dtest=GroupRenameAndDeleteIntegrationTest` pasan al 100%.
 
-- [ ] **T5: Verificación de calidad integral, formateo Spotless, suite completa de pruebas y actualización de `MEMORY.md`**
+- [x] **T5: Verificación de calidad integral, formateo Spotless, suite completa de pruebas y actualización de `MEMORY.md`**
   - **Requisitos cubiertos:** Todos los requisitos del módulo (`GRP-REQ-01` a `GRP-REQ-25`, `EC-01` a `EC-12`), Constitución Principios 3 y 6.
   - **Archivos a modificar/verificar:**
     - `MEMORY.md`
