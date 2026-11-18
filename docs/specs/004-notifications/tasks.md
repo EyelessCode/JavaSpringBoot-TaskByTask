@@ -37,7 +37,7 @@
     - Escribir pruebas unitarias en `GlobalExceptionHandlerTest`, `KeysetCursorCodecTest` y `VapidConfigurationStateTest`.
   - **Criterio de finalización (Done when):** `./mvnw spotless:check compile test-compile` y `./mvnw test -Dtest=GlobalExceptionHandlerTest,KeysetCursorCodecTest,VapidConfigurationStateTest` pasan al 100%.
 
-- [ ] **T2: Gestión de suscripciones Web Push y endpoint VAPID (`GET /vapid-public-key`, `POST/DELETE /push/subscriptions`)**
+- [x] **T2: Gestión de suscripciones Web Push y endpoint VAPID (`GET /vapid-public-key`, `POST/DELETE /push/subscriptions`)**
   - **Requisitos cubiertos:** NTF-REQ-01 a NTF-REQ-10, NTF-REQ-27, NTF-REQ-28, NTF-REQ-29, EC-02, EC-03, EC-08, EC-12.
   - **Archivos a crear/modificar:**
     - `src/main/java/com/eyelesscode/task_by_task/notification/PushSubscriptionRepository.java`
