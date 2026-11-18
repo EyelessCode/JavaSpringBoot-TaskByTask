@@ -1,7 +1,7 @@
 # Lista de Tareas: 004-notifications (Notificaciones Push Web, Jobs de Vencimiento y Centro de Notificaciones)
 
 **Fase:** 004-notifications  
-**Estado:** in_progress  
+**Estado:** completed  
 **Fecha:** 2026-11-18  
 **Autor:** SDD Planner Agent  
 **Referencias:**
@@ -122,7 +122,7 @@
     - Crear `DueNotificationJobServiceTest` (unitarios cubriendo todos los casos borde `NTF-REQ-12..14`, hora local pre-09:00 AM y cambio de zona), `DueNotificationDeliveryIntegrationTest` (Testcontainers + `HttpServer` local + claves VAPID P-256 reales de prueba validando descifrado real, auto-limpieza `404`/`410`, tolerancia a `500`/`429`/timeout y VAPID deshabilitado/parcial/malformado), y `NotificationSchedulerIntegrationTest` (habilitando `db-scheduler.enabled=true` y `polling-interval=200ms` con `Awaitility` para probar disparo automático real desde `TaskDueSchedulePort`, reprogramación `NTF-REQ-13` y registro/ejecución del job recurrente de retención).
   - **Criterio de finalización (Done when):** `./mvnw spotless:check compile test-compile` y `./mvnw test -Dtest=DueNotificationJobServiceTest,DueNotificationDeliveryIntegrationTest,NotificationSchedulerIntegrationTest` pasan al 100%.
 
-- [ ] **T7: Verificación integral de calidad, formato Spotless, regresión completa del proyecto y actualización de `MEMORY.md`**
+- [x] **T7: Verificación integral de calidad, formato Spotless, regresión completa del proyecto y actualización de `MEMORY.md`**
   - **Requisitos cubiertos:** Todos los requisitos del módulo (`NTF-REQ-01` a `NTF-REQ-29`, `EC-01` a `EC-12`), Constitución Principios 1 a 6.
   - **Archivos a modificar/verificar:**
     - `docs/specs/004-notifications/plan.md` (`**Estado:** completed`)
