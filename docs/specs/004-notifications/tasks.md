@@ -96,7 +96,7 @@
     - Escribir pruebas unitarias exhaustivas en `NotificationContentFormatterTest` y validar arranque/schema en `ApplicationIntegrationTest`.
   - **Criterio de finalización (Done when):** `./mvnw spotless:check compile test-compile` y `./mvnw test -Dtest=NotificationContentFormatterTest,ApplicationIntegrationTest` pasan al 100%.
 
-- [ ] **T5: Centro de Notificaciones REST API (`GET /notifications`, `/unread-count`, `PATCH /read`, `PATCH /read-all`, `DELETE /{id}`) y retención 30 días**
+- [x] **T5: Centro de Notificaciones REST API (`GET /notifications`, `/unread-count`, `PATCH /read`, `PATCH /read-all`, `DELETE /{id}`) y retención 30 días**
   - **Requisitos cubiertos:** NTF-REQ-19 a NTF-REQ-29, EC-08, EC-10, EC-11.
   - **Archivos a crear/modificar:**
     - `src/main/java/com/eyelesscode/task_by_task/notification/NotificationService.java`
