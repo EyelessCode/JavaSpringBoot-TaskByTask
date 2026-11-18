@@ -60,7 +60,7 @@
     - Crear pruebas unitarias (`RegisterPushSubscriptionRequestValidationTest`) e integración (`PushSubscriptionIntegrationTest`, incluyendo verificación del ignorado de campos W3C `expirationTime`/campos de servidor y regresión junto a `POST /api/v1/auth/logout`).
   - **Criterio de finalización (Done when):** `./mvnw spotless:check compile test-compile` y `./mvnw test -Dtest=RegisterPushSubscriptionRequestValidationTest,PushSubscriptionIntegrationTest,AuthLoginLogoutIntegrationTest` pasan al 100%.
 
-- [ ] **T3: Cifrado Web Push RFC 8291 (`aes128gcm`), firma VAPID RFC 8292 (`ES256`) y transporte HTTP**
+- [x] **T3: Cifrado Web Push RFC 8291 (`aes128gcm`), firma VAPID RFC 8292 (`ES256`) y transporte HTTP**
   - **Requisitos cubiertos:** NTF-REQ-16, NTF-REQ-17, NTF-REQ-18, EC-01, EC-07.
   - **Archivos a crear:**
     - `src/main/java/com/eyelesscode/task_by_task/notification/WebPushPayload.java`
