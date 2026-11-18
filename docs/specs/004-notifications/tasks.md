@@ -108,7 +108,7 @@
     - Crear `NotificationCenterIntegrationTest` cubriendo orden `created_at DESC, id DESC`, desempate por `id`, estabilidad ante inserciones nuevas (`EC-10`), `unreadOnly`, contadores, marcado individual idempotente y masivo, eliminación, precedencia `404` -> `403`, cursores corruptos/blank/campos nulos/tipo incorrecto, `limit` inválido, parámetros mal tipados (`400 Solicitud inválida`), seguridad `401`/CSRF `403` y purga exacta de 30 días calendario (leídas y no leídas).
   - **Criterio de finalización (Done when):** `./mvnw spotless:check compile test-compile` y `./mvnw test -Dtest=NotificationCenterIntegrationTest` pasan al 100%.
 
-- [ ] **T6: Ejecución `db-scheduler` de vencimientos (`task-due-notification`), retención diaria y entrega Web Push end-to-end**
+- [x] **T6: Ejecución `db-scheduler` de vencimientos (`task-due-notification`), retención diaria y entrega Web Push end-to-end**
   - **Requisitos cubiertos:** NTF-REQ-11 a NTF-REQ-18, NTF-REQ-26, EC-01, EC-04, EC-05, EC-06, EC-07, EC-11, RNF-20.
   - **Archivos a crear:**
     - `src/main/java/com/eyelesscode/task_by_task/notification/DueNotificationJobService.java`
