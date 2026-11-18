@@ -15,4 +15,9 @@ public interface TaskRepository extends JpaRepository<Task, Long>, TaskQueryRepo
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT t FROM Task t JOIN FETCH t.group g JOIN FETCH g.creator WHERE t.id = :taskId")
     Optional<Task> findByIdForUpdate(@Param("taskId") Long taskId);
+
+    @Query(
+            "SELECT t FROM Task t JOIN FETCH t.group g JOIN FETCH g.creator"
+                    + " LEFT JOIN FETCH t.assignedUser WHERE t.id = :taskId")
+    Optional<Task> findByIdForDueNotification(@Param("taskId") Long taskId);
 }

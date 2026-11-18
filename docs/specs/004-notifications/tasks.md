@@ -75,7 +75,7 @@
     - Escribir pruebas unitarias con descifrado inverso real del lado cliente y verificación real de firma JWT ES256 (`WebPushEncryptionServiceTest`), y pruebas contra `com.sun.net.httpserver.HttpServer` embebido local (`HttpClientWebPushTransportTest`).
   - **Criterio de finalización (Done when):** `./mvnw spotless:check compile test-compile` y `./mvnw test -Dtest=WebPushEncryptionServiceTest,HttpClientWebPushTransportTest` pasan al 100%.
 
-- [ ] **T4: Entidad `Notification`, formateo localizado (`RNF-14`/`RF-04`), repositorio Keyset y consulta de tarea para notificación**
+- [x] **T4: Entidad `Notification`, formateo localizado (`RNF-14`/`RF-04`), repositorio Keyset y consulta de tarea para notificación**
   - **Requisitos cubiertos:** NTF-REQ-14, NTF-REQ-15, NTF-REQ-19, NTF-REQ-20, NTF-REQ-21, NTF-REQ-23, NTF-REQ-26, EC-09, EC-10, EC-11, RNF-20.
   - **Archivos a crear/modificar:**
     - `src/main/java/com/eyelesscode/task_by_task/notification/NotificationEventType.java`
