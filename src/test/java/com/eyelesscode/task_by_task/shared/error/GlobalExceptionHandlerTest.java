@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 class GlobalExceptionHandlerTest {
@@ -92,6 +93,9 @@ class GlobalExceptionHandlerTest {
         void triggerServerError() {
             throw new RuntimeException("Fallo crítico interno con datos sensibles");
         }
+
+        @GetMapping("/missing-param")
+        void triggerMissingParam(@RequestParam("endpoint") String endpoint) {}
     }
 
     @Test
@@ -247,5 +251,22 @@ class GlobalExceptionHandlerTest {
                                                 containsString(
                                                         "Fallo crítico interno con datos"
                                                                 + " sensibles"))));
+    }
+
+    @Test
+    @DisplayName(
+            "400: MissingServletRequestParameterException devuelve RFC 7807 como Solicitud"
+                    + " inválida (NTF-REQ-09)")
+    void shouldHandleMissingServletRequestParameterException() throws Exception {
+        mockMvc.perform(get("/test-errors/missing-param"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Solicitud inválida"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(
+                        jsonPath("$.detail")
+                                .value(
+                                        "El parámetro 'endpoint' es obligatorio y no puede estar"
+                                                + " vacío"))
+                .andExpect(jsonPath("$.instance").value("/test-errors/missing-param"));
     }
 }

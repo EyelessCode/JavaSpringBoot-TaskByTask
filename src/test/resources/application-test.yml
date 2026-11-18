@@ -24,8 +24,12 @@ server:
         secure: false
 
 db-scheduler:
-  enabled: true
+  enabled: false
   table-name: scheduled_tasks
+
+app:
+  web-push:
+    enabled: false
 
 logging:
   level:

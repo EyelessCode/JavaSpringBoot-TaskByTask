@@ -187,7 +187,7 @@ public class KeysetCursorCodec {
                     yield new KeysetCursor.TagCursor(payload.name(), payload.id());
                 }
                 case "NOTIFICATION" -> {
-                    if (payload.createdAt() == null) {
+                    if (payload.createdAt() == null || payload.id() == null) {
                         throw new BadRequestException(INVALID_CURSOR_MSG);
                     }
                     yield new KeysetCursor.NotificationCursor(payload.createdAt(), payload.id());

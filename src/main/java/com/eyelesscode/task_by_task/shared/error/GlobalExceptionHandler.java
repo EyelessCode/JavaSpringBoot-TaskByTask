@@ -20,6 +20,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -107,6 +108,21 @@ public class GlobalExceptionHandler {
                 ProblemDetail.forStatusAndDetail(
                         HttpStatus.BAD_REQUEST,
                         "El cuerpo o parámetro de la solicitud no tiene un formato válido");
+        problemDetail.setTitle("Solicitud inválida");
+        problemDetail.setInstance(
+                URI.create(request.getRequestURI() != null ? request.getRequestURI() : "/"));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ProblemDetail> handleMissingServletRequestParameter(
+            MissingServletRequestParameterException ex, HttpServletRequest request) {
+        ProblemDetail problemDetail =
+                ProblemDetail.forStatusAndDetail(
+                        HttpStatus.BAD_REQUEST,
+                        "El parámetro '"
+                                + ex.getParameterName()
+                                + "' es obligatorio y no puede estar vacío");
         problemDetail.setTitle("Solicitud inválida");
         problemDetail.setInstance(
                 URI.create(request.getRequestURI() != null ? request.getRequestURI() : "/"));

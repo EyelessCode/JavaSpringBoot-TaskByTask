@@ -41,6 +41,14 @@ db-scheduler:
   enabled: true
   table-name: scheduled_tasks
 
+app:
+  web-push:
+    enabled: ${WEB_PUSH_ENABLED:false}
+    vapid:
+      public-key: ${VAPID_PUBLIC_KEY:}
+      private-key: ${VAPID_PRIVATE_KEY:}
+      subject: ${VAPID_SUBJECT:}
+
 logging:
   level:
     root: INFO

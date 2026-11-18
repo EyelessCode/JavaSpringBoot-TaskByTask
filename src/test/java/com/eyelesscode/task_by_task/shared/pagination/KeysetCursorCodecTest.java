@@ -284,6 +284,29 @@ class KeysetCursorCodecTest {
                     .hasMessage(EXPECTED_ERROR);
         }
 
+        @Test
+        @DisplayName(
+                "NotificationCursor rechaza createdAt o id nulos en constructor y en decodificación"
+                        + " con checksum válido (NTF-REQ-20)")
+        void shouldRejectNotificationCursorWithNullFieldsInConstructorAndChecksumValidToken() {
+            assertThatThrownBy(() -> new KeysetCursor.NotificationCursor(null, 1L))
+                    .isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> new KeysetCursor.NotificationCursor(SAMPLE_INSTANT, null))
+                    .isInstanceOf(IllegalArgumentException.class);
+
+            String missingCreatedAtToken = buildSignedToken("{\"type\":\"NOTIFICATION\",\"id\":5}");
+            assertThatThrownBy(() -> codec.decodeNotificationCursor(missingCreatedAtToken))
+                    .isInstanceOf(BadRequestException.class)
+                    .hasMessage(EXPECTED_ERROR);
+
+            String missingIdToken =
+                    buildSignedToken(
+                            "{\"type\":\"NOTIFICATION\",\"createdAt\":\"2026-11-09T18:00:00Z\"}");
+            assertThatThrownBy(() -> codec.decodeNotificationCursor(missingIdToken))
+                    .isInstanceOf(BadRequestException.class)
+                    .hasMessage(EXPECTED_ERROR);
+        }
+
         private String buildSignedToken(String rawJson) {
             byte[] jsonBytes = rawJson.getBytes(java.nio.charset.StandardCharsets.UTF_8);
             java.util.zip.CRC32 crc = new java.util.zip.CRC32();
