@@ -32,7 +32,7 @@
     - Crear `.env.example` documentando todas las variables de entorno (incluyendo nota de puerto `5432` Session Mode de Supabase para Flyway) sin ninguna credencial real.
   - **Criterio de finalización (Done when):** `./mvnw spotless:check compile test-compile` y `./mvnw test -Dtest=TaskByTaskApplicationTests,ApplicationIntegrationTest` pasan sin errores y las propiedades de `SecurityProperties` validan correctamente restricciones inválidas.
 
-- [ ] **T2: Frontera de proxy de confianza (`TrustedProxyResolver`, `TrustedForwardedHeaderFilter`) y protección anti-spoofing en `RateLimitService`**
+- [x] **T2: Frontera de proxy de confianza (`TrustedProxyResolver`, `TrustedForwardedHeaderFilter`) y protección anti-spoofing en `RateLimitService`**
   - **Requisitos cubiertos:** HRD-REQ-03, EC-02, RNF-06, RNF-08.
   - **Archivos a crear/modificar:**
     - `src/main/java/com/eyelesscode/task_by_task/shared/security/TrustedProxyResolver.java`

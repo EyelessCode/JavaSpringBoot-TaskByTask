@@ -139,5 +139,41 @@ class RateLimitServiceTest {
             String key = service.buildPartitionKey(request, "login");
             assertThat(key).isEqualTo("172.16.0.5:login");
         }
+
+        @Test
+        @DisplayName(
+                "Ignora X-Forwarded-For y X-Real-IP falsificados cuando remoteAddr es una IP"
+                        + " pública no confiable (EC-02)")
+        void shouldIgnoreSpoofedProxyHeadersFromPublicIp() {
+            var request = new MockHttpServletRequest();
+            request.setRemoteAddr("203.0.113.77");
+            request.addHeader("X-Forwarded-For", "198.51.100.10, 10.0.0.1");
+            request.addHeader("X-Real-IP", "198.51.100.20");
+
+            assertThat(service.resolveClientIp(request)).isEqualTo("203.0.113.77");
+            assertThat(service.buildPartitionKey(request, "login")).isEqualTo("203.0.113.77:login");
+        }
+
+        @Test
+        @DisplayName(
+                "No permite evadir el rate limit rotando X-Forwarded-For desde una IP pública"
+                        + " directa")
+        void shouldNotBypassRateLimitBySpoofingXForwardedFor() {
+            for (int i = 1; i <= 5; i++) {
+                var request = new MockHttpServletRequest();
+                request.setRemoteAddr("203.0.113.77");
+                request.addHeader("X-Forwarded-For", "198.51.100." + i);
+                String key = service.buildPartitionKey(request, "login");
+                assertThatCode(() -> service.consumeOrThrow(key)).doesNotThrowAnyException();
+            }
+
+            var sixthRequest = new MockHttpServletRequest();
+            sixthRequest.setRemoteAddr("203.0.113.77");
+            sixthRequest.addHeader("X-Forwarded-For", "198.51.100.99");
+            String sixthKey = service.buildPartitionKey(sixthRequest, "login");
+
+            assertThatThrownBy(() -> service.consumeOrThrow(sixthKey))
+                    .isInstanceOf(RateLimitException.class);
+        }
     }
 }

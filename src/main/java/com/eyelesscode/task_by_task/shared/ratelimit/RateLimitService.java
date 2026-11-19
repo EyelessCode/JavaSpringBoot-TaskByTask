@@ -1,5 +1,6 @@
 package com.eyelesscode.task_by_task.shared.ratelimit;
 
+import com.eyelesscode.task_by_task.shared.security.TrustedProxyResolver;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.github.bucket4j.Bandwidth;
@@ -8,6 +9,7 @@ import io.github.bucket4j.ConsumptionProbe;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.util.Objects;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -21,23 +23,52 @@ public class RateLimitService {
     private final int capacity;
     private final Duration refillDuration;
     private final Cache<String, Bucket> cache;
+    private final TrustedProxyResolver trustedProxyResolver;
+
+    @Autowired
+    public RateLimitService(TrustedProxyResolver trustedProxyResolver) {
+        this(
+                DEFAULT_CAPACITY,
+                DEFAULT_REFILL_DURATION,
+                DEFAULT_MAX_CACHE_SIZE,
+                DEFAULT_EXPIRE_AFTER_ACCESS,
+                trustedProxyResolver);
+    }
 
     public RateLimitService() {
         this(
                 DEFAULT_CAPACITY,
                 DEFAULT_REFILL_DURATION,
                 DEFAULT_MAX_CACHE_SIZE,
-                DEFAULT_EXPIRE_AFTER_ACCESS);
+                DEFAULT_EXPIRE_AFTER_ACCESS,
+                TrustedProxyResolver.withDefaultTrustedProxies());
     }
 
     public RateLimitService(
             int capacity, Duration refillDuration, long maxCacheSize, Duration expireAfterAccess) {
+        this(
+                capacity,
+                refillDuration,
+                maxCacheSize,
+                expireAfterAccess,
+                TrustedProxyResolver.withDefaultTrustedProxies());
+    }
+
+    public RateLimitService(
+            int capacity,
+            Duration refillDuration,
+            long maxCacheSize,
+            Duration expireAfterAccess,
+            TrustedProxyResolver trustedProxyResolver) {
         if (capacity < 1) {
             throw new IllegalArgumentException("capacity must be at least 1");
         }
         this.capacity = capacity;
         this.refillDuration =
                 Objects.requireNonNull(refillDuration, "refillDuration must not be null");
+        this.trustedProxyResolver =
+                Objects.requireNonNull(
+                        trustedProxyResolver, "trustedProxyResolver must not be null");
         this.cache =
                 Caffeine.newBuilder()
                         .maximumSize(maxCacheSize)
@@ -75,16 +106,10 @@ public class RateLimitService {
         if (request == null) {
             return "UNKNOWN";
         }
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-        String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isBlank()) {
-            return xRealIp.trim();
-        }
-        String remoteAddr = request.getRemoteAddr();
-        return (remoteAddr != null && !remoteAddr.isBlank()) ? remoteAddr.trim() : "UNKNOWN";
+        return trustedProxyResolver.extractClientIp(
+                request.getRemoteAddr(),
+                request.getHeader("X-Forwarded-For"),
+                request.getHeader("X-Real-IP"));
     }
 
     public String buildPartitionKey(HttpServletRequest request, String action) {
