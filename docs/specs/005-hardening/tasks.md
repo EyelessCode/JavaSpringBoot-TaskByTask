@@ -15,7 +15,7 @@
 
 ## Tareas de Implementación
 
-- [ ] **T1: Configuración de perfiles productivos, HikariCP, Actuator endurecido, apagado elegante y plantilla `.env.example`**
+- [x] **T1: Configuración de perfiles productivos, HikariCP, Actuator endurecido, apagado elegante y plantilla `.env.example`**
   - **Requisitos cubiertos:** HRD-REQ-12, HRD-REQ-13, HRD-REQ-14, HRD-REQ-15, HRD-REQ-16, HRD-REQ-20, FND-REQ-34, FND-REQ-35.
   - **Archivos a crear/modificar:**
     - `.env.example`

@@ -19,6 +19,20 @@ server:
       cookie:
         secure: false
 
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+app:
+  security:
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+    cookie:
+      secure: false
+      same-site: Lax
+
 logging:
   level:
     com.eyelesscode.task_by_task: DEBUG

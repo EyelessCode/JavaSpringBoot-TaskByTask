@@ -10,6 +10,13 @@ spring:
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: task-by-task-hikari
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: ${DB_POOL_CONNECTION_TIMEOUT_MS:5000}
+      idle-timeout: ${DB_POOL_IDLE_TIMEOUT_MS:300000}
+      max-lifetime: ${DB_POOL_MAX_LIFETIME_MS:1500000}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -27,21 +34,71 @@ spring:
     timeout: 7d
     jdbc:
       initialize-schema: never
+  lifecycle:
+    timeout-per-shutdown-phase: 25s
 
 server:
+  shutdown: graceful
+  forward-headers-strategy: none
+  compression:
+    enabled: true
+    mime-types: application/json,application/problem+json,application/vnd.oai.openapi+json,text/html,text/css,application/javascript
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
   servlet:
     session:
       timeout: 7d
       cookie:
         http-only: true
         same-site: lax
-        secure: true
+        secure: ${COOKIE_SECURE:true}
+
+management:
+  endpoints:
+    access:
+      default: none
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      access: read-only
+      show-details: never
+      show-components: never
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
+springdoc:
+  api-docs:
+    enabled: ${OPENAPI_ENABLED:true}
+  swagger-ui:
+    enabled: ${SWAGGER_UI_ENABLED:true}
 
 db-scheduler:
   enabled: true
   table-name: scheduled_tasks
 
 app:
+  security:
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+      max-age-seconds: ${CORS_MAX_AGE_SECONDS:3600}
+    cookie:
+      secure: ${COOKIE_SECURE:true}
+      same-site: ${COOKIE_SAME_SITE:Lax}
+      domain: ${COOKIE_DOMAIN:}
+    trusted-proxies: ${TRUSTED_PROXIES:127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7}
   web-push:
     enabled: ${WEB_PUSH_ENABLED:false}
     vapid:
@@ -52,5 +109,5 @@ app:
 logging:
   level:
     root: INFO
-    com.eyelesscode.task_by_task: DEBUG
+    com.eyelesscode.task_by_task: INFO
     org.springframework.security: INFO
