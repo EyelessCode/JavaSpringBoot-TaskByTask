@@ -109,7 +109,7 @@
     - Crear `OpenApiContractIntegrationTest` verificando `/v3/api-docs` completo, esquema plano de `PATCH /api/v1/tasks/{taskId}` y ausencia total de rutas/conceptos Posteriores (`RF-08`..`RF-11`, `RF-17`..`RF-21`, `RF-23`, `RF-26`, `RF-30`..`RF-33`) o excluidos; y crear `ProdProfileIntegrationTest` validando perfil `prod` (pool HikariCP acotado, `springdoc` deshabilitado devolviendo `404` RFC 7807 en español, `/actuator/health/readiness` `200 UP`, y VAPID off sin degradar salud).
   - **Criterio de finalización (Done when):** `./mvnw spotless:check compile test-compile` y `./mvnw test -Dtest=OpenApiContractIntegrationTest,ProdProfileIntegrationTest,ApplicationIntegrationTest` pasan al 100%.
 
-- [ ] **T6: Suite End-to-End (E2E) integral multi-módulo del MVP sobre PostgreSQL real (`MvpEndToEndJourneyIntegrationTest`)**
+- [x] **T6: Suite End-to-End (E2E) integral multi-módulo del MVP sobre PostgreSQL real (`MvpEndToEndJourneyIntegrationTest`)**
   - **Requisitos cubiertos:** HRD-REQ-21, HRD-REQ-22, EC-08, OBJ-01 a OBJ-03, RF-01 a RF-07, RF-12 a RF-16, RF-22, RF-24, RF-25, RF-27 a RF-29.
   - **Archivos a crear:**
     - `src/test/java/com/eyelesscode/task_by_task/mvp/MvpEndToEndJourneyIntegrationTest.java`
