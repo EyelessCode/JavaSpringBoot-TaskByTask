@@ -1,9 +1,21 @@
 package com.eyelesscode.task_by_task.shared.pagination;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
 
-public record KeysetPage<T>(List<T> content, String nextCursor, boolean hasNext, int size) {
+@Schema(description = "Página de resultados con paginación Keyset (Seek)")
+public record KeysetPage<T>(
+        @Schema(description = "Elementos de la página actual") List<T> content,
+        @Schema(
+                        description =
+                                "Cursor opaco Base64URL para solicitar la siguiente página (nulo si"
+                                        + " no hay más resultados)",
+                        nullable = true)
+                String nextCursor,
+        @Schema(description = "Indica si existen más páginas disponibles") boolean hasNext,
+        @Schema(description = "Cantidad de elementos devueltos en la página actual", example = "20")
+                int size) {
 
     public KeysetPage {
         content = content != null ? List.copyOf(content) : List.of();

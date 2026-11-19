@@ -89,7 +89,7 @@
     - Escribir `JacksonStrictCoercionTest`, ampliar `GlobalExceptionHandlerTest` y verificar en `HardeningSecurityIntegrationTest` la precedencia `401` anónimo vs `404`/`405`/`415`/`406` autenticado y rechazo uniforme de coerción escalar e ignorado de desconocidos en los 6 módulos.
   - **Criterio de finalización (Done when):** `./mvnw spotless:check compile test-compile` y `./mvnw test -Dtest=JacksonStrictCoercionTest,GlobalExceptionHandlerTest,HardeningSecurityIntegrationTest,UpdateTaskRequestDeserializerTest` pasan al 100%.
 
-- [ ] **T5: Pulido integral del contrato OpenAPI 3 (`OpenApiConfig`, 6 controladores, DTOs) y verificación de perfil `prod`**
+- [x] **T5: Pulido integral del contrato OpenAPI 3 (`OpenApiConfig`, 6 controladores, DTOs) y verificación de perfil `prod`**
   - **Requisitos cubiertos:** HRD-REQ-14, HRD-REQ-17, HRD-REQ-18, HRD-REQ-19, HRD-REQ-20, HRD-REQ-22, EC-04, EC-05, EC-06.
   - **Archivos a crear/modificar:**
     - `src/main/java/com/eyelesscode/task_by_task/shared/config/OpenApiConfig.java`
