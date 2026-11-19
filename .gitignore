@@ -1,4 +1,5 @@
 HELP.md
+.agents/
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
@@ -31,3 +32,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Environment & Secrets ###
+.env
+.env.*
+!.env.example
+application-local.yml
+application-local.properties
+

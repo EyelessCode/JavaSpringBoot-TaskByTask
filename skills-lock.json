@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "skills": {
+    "dto-creator": {
+      "source": "Amplicode/spring-skills",
+      "sourceType": "github",
+      "skillPath": "skills/dto-creator/SKILL.md",
+      "computedHash": "e0c8c1a904184c46335fd42ccd4cbd6bf6467214cd57831b262f72403ad0206d"
+    },
+    "spring-boot": {
+      "source": "full-stack-skills/spring-skills",
+      "sourceType": "github",
+      "skillPath": "skills/spring-boot/SKILL.md",
+      "computedHash": "4f36075aac2d3d103a8872133367b56b044ed7eb045bbbca1446181d5f22d1e2"
+    },
+    "spring-data-jpa": {
+      "source": "full-stack-skills/spring-skills",
+      "sourceType": "github",
+      "skillPath": "skills/spring-data-jpa/SKILL.md",
+      "computedHash": "868560f7a3dd88760eb705a7ed5d38a741a99c96df476bfbf21fed88405e2536"
+    },
+    "spring-explore": {
+      "source": "Amplicode/spring-skills",
+      "sourceType": "github",
+      "skillPath": "skills/spring-explore/SKILL.md",
+      "computedHash": "788fddcb7f9dbc17f75f44a2e3e4f573a476a3242be88c8b0254e97ece08aa10"
+    },
+    "spring-security": {
+      "source": "full-stack-skills/spring-skills",
+      "sourceType": "github",
+      "skillPath": "skills/spring-security/SKILL.md",
+      "computedHash": "1563477f9a6c1f879f611f86f133202ba625381ceee40d9a11c0d45d10a97de6"
+    },
+    "supabase-postgres-best-practices": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase-postgres-best-practices/SKILL.md",
+      "computedHash": "128fac78002d916c8ca908245d398e634f540d8bcf20915b2b2359aeb18eba59"
+    }
+  }
+}

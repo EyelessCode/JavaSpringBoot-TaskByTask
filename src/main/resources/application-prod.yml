@@ -1,0 +1,27 @@
+# Perfil de producción: valores estrictos por defecto. Todos los secretos llegan por variables de entorno.
+server:
+  servlet:
+    session:
+      cookie:
+        secure: ${COOKIE_SECURE:true}
+
+springdoc:
+  api-docs:
+    enabled: ${OPENAPI_ENABLED:false}
+  swagger-ui:
+    enabled: ${SWAGGER_UI_ENABLED:false}
+
+app:
+  security:
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+    cookie:
+      secure: ${COOKIE_SECURE:true}
+      same-site: ${COOKIE_SAME_SITE:Lax}
+      domain: ${COOKIE_DOMAIN:}
+
+logging:
+  level:
+    root: INFO
+    com.eyelesscode.task_by_task: INFO
+    org.springframework.security: INFO

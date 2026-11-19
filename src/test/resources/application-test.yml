@@ -1,0 +1,50 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    schemas: public
+    locations: classpath:db/migration
+  session:
+    store-type: jdbc
+    timeout: 7d
+    jdbc:
+      initialize-schema: never
+
+server:
+  servlet:
+    session:
+      cookie:
+        secure: false
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+db-scheduler:
+  enabled: false
+  table-name: scheduled_tasks
+
+app:
+  security:
+    cors:
+      allowed-origins: http://localhost:3000
+    cookie:
+      secure: false
+      same-site: Lax
+  web-push:
+    enabled: false
+
+logging:
+  level:
+    root: INFO
+    com.eyelesscode.task_by_task: DEBUG
+    org.testcontainers: INFO

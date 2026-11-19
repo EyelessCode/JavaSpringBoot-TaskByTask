@@ -1,0 +1,17 @@
+.git
+.gitignore
+.gitattributes
+.agents
+.github
+.vscode
+.idea
+.env
+.env.*
+target/
+docs/
+HELP.md
+MEMORY.md
+AGENTS.md
+README.md
+docker-compose.dev.yml
+skills-lock.json
