@@ -88,7 +88,10 @@ public class NotificationController {
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Suscripción eliminada correctamente"),
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
-        @ApiResponse(responseCode = "403", description = "Token CSRF ausente o inválido"),
+        @ApiResponse(
+                responseCode = "403",
+                description =
+                        "Token CSRF ausente/inválido o la suscripción no pertenece al usuario"),
         @ApiResponse(responseCode = "404", description = "Suscripción no encontrada")
     })
     public ResponseEntity<Void> deleteSubscriptionById(
@@ -131,7 +134,7 @@ public class NotificationController {
             @Parameter(description = "Cursor opaco Base64URL de la página anterior")
                     @RequestParam(required = false)
                     String cursor,
-            @Parameter(description = "Cantidad máxima de elementos por página (1 a 100)")
+            @Parameter(description = "Cantidad máxima de elementos por página (1 a 50)")
                     @RequestParam(defaultValue = "20")
                     int limit,
             @Parameter(description = "Si es true devuelve únicamente notificaciones no leídas")
@@ -156,7 +159,10 @@ public class NotificationController {
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Notificación marcada como leída"),
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
-        @ApiResponse(responseCode = "403", description = "Token CSRF ausente o inválido"),
+        @ApiResponse(
+                responseCode = "403",
+                description =
+                        "Token CSRF ausente/inválido o la notificación no pertenece al usuario"),
         @ApiResponse(responseCode = "404", description = "Notificación no encontrada")
     })
     public ResponseEntity<NotificationResponse> markAsRead(
@@ -184,7 +190,10 @@ public class NotificationController {
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Notificación eliminada correctamente"),
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
-        @ApiResponse(responseCode = "403", description = "Token CSRF ausente o inválido"),
+        @ApiResponse(
+                responseCode = "403",
+                description =
+                        "Token CSRF ausente/inválido o la notificación no pertenece al usuario"),
         @ApiResponse(responseCode = "404", description = "Notificación no encontrada")
     })
     public ResponseEntity<Void> deleteNotification(

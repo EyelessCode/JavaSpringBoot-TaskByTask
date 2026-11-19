@@ -78,6 +78,10 @@ class OpenApiContractIntegrationTest extends AbstractIntegrationTest {
         assertThat(patchProps.has("dueDate")).isTrue();
         assertThat(patchProps.has("dueTime")).isTrue();
         assertThat(patchProps.has("tags")).isTrue();
+        JsonNode patchTagItems = patchProps.path("tags").path("items");
+        assertThat(patchTagItems.path("minLength").asInt()).isEqualTo(1);
+        assertThat(patchTagItems.path("maxLength").asInt()).isEqualTo(30);
+        assertThat(patchTagItems.path("pattern").asString()).isEqualTo("^[^,;]*$");
 
         JsonNode patchTaskRef =
                 root.path("paths")
@@ -150,6 +154,91 @@ class OpenApiContractIntegrationTest extends AbstractIntegrationTest {
                         .as("La ruta %s no debe exponer concepto Posterior '%s'", path, forbidden)
                         .doesNotContain(forbidden);
             }
+        }
+
+        // 6. Todas las respuestas 4xx/5xx referencian ProblemDetailResponse en
+        // application/problem+json y exponen 405/406/500
+        for (String path : pathKeys) {
+            JsonNode pathItem = paths.path(path);
+            for (String method : pathItem.propertyNames()) {
+                JsonNode operation = pathItem.path(method);
+                JsonNode responses = operation.path("responses");
+                assertThat(responses.has("405"))
+                        .as("%s %s debe documentar 405", method, path)
+                        .isTrue();
+                assertThat(responses.has("406"))
+                        .as("%s %s debe documentar 406", method, path)
+                        .isTrue();
+                assertThat(responses.has("500"))
+                        .as("%s %s debe documentar 500", method, path)
+                        .isTrue();
+                for (String code : responses.propertyNames()) {
+                    if (code.startsWith("4") || code.startsWith("5")) {
+                        String ref =
+                                responses
+                                        .path(code)
+                                        .path("content")
+                                        .path("application/problem+json")
+                                        .path("schema")
+                                        .path("$ref")
+                                        .asString();
+                        assertThat(ref)
+                                .as(
+                                        "%s %s %s debe referenciar ProblemDetailResponse",
+                                        method, path, code)
+                                .isEqualTo("#/components/schemas/ProblemDetailResponse");
+                    }
+                }
+            }
+        }
+
+        // 7. Verificar límites Appendix B (limit max 50, search solo por título) y 403 en GET con
+        // ownership
+        List<String> paginatedPaths =
+                List.of(
+                        "/api/v1/groups",
+                        "/api/v1/groups/{groupId}/tags",
+                        "/api/v1/tasks",
+                        "/api/v1/groups/{groupId}/tasks",
+                        "/api/v1/notifications");
+        for (String paginatedPath : paginatedPaths) {
+            JsonNode params = paths.path(paginatedPath).path("get").path("parameters");
+            boolean foundLimit = false;
+            for (JsonNode param : params) {
+                if ("limit".equals(param.path("name").asString())) {
+                    foundLimit = true;
+                    assertThat(param.path("description").asString())
+                            .contains("50")
+                            .doesNotContain("100");
+                }
+            }
+            assertThat(foundLimit).as("limit param en %s", paginatedPath).isTrue();
+        }
+
+        for (String searchPath : List.of("/api/v1/tasks", "/api/v1/groups/{groupId}/tasks")) {
+            JsonNode params = paths.path(searchPath).path("get").path("parameters");
+            boolean foundSearch = false;
+            for (JsonNode param : params) {
+                if ("search".equals(param.path("name").asString())) {
+                    foundSearch = true;
+                    assertThat(param.path("description").asString())
+                            .containsIgnoringCase("título")
+                            .doesNotContainIgnoringCase("descripción")
+                            .doesNotContainIgnoringCase("etiqueta");
+                }
+            }
+            assertThat(foundSearch).as("search param en %s", searchPath).isTrue();
+        }
+
+        for (String ownershipGet :
+                List.of(
+                        "/api/v1/groups/{groupId}",
+                        "/api/v1/tasks/{taskId}",
+                        "/api/v1/groups/{groupId}/tasks",
+                        "/api/v1/groups/{groupId}/tags")) {
+            assertThat(paths.path(ownershipGet).path("get").path("responses").has("403"))
+                    .as("GET %s debe documentar 403 por ownership", ownershipGet)
+                    .isTrue();
         }
     }
 }

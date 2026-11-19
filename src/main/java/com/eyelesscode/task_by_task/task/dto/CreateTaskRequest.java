@@ -47,7 +47,8 @@ public record CreateTaskRequest(
                 LocalTime dueTime,
         @Schema(
                         description =
-                                "Lista opcional de nombres de etiquetas (máx. 25 caracteres c/u)",
+                                "Lista opcional de nombres de etiquetas (1 a 30 caracteres c/u,"
+                                        + " sin comas ni ';')",
                         nullable = true)
                 List<
                                 @NotBlank(message = TagNameRules.REQUIRED_MESSAGE) @Size(

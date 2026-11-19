@@ -118,7 +118,8 @@ public class AuthController {
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Sesión cerrada correctamente"),
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
-        @ApiResponse(responseCode = "403", description = "Token CSRF ausente o inválido")
+        @ApiResponse(responseCode = "403", description = "Token CSRF ausente o inválido"),
+        @ApiResponse(responseCode = "415", description = "Tipo de medio no soportado")
     })
     public ResponseEntity<Void> logout(
             @RequestBody(required = false) LogoutRequest request,

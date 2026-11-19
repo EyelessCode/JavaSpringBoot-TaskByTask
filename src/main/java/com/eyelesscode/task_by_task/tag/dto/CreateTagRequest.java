@@ -12,7 +12,7 @@ import jakarta.validation.constraints.Size;
 public record CreateTagRequest(
         @Schema(
                         description =
-                                "Nombre de la etiqueta (máx. 25 caracteres, sin comas ni punto y"
+                                "Nombre de la etiqueta (1 a 30 caracteres, sin comas ni punto y"
                                         + " coma)",
                         example = "urgente")
                 @NotBlank(message = TagNameRules.REQUIRED_MESSAGE) @Size(max = TagNameRules.MAX_LENGTH, message = TagNameRules.LENGTH_MESSAGE) @Pattern(

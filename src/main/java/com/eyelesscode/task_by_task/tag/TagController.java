@@ -47,6 +47,9 @@ public class TagController {
         @ApiResponse(responseCode = "200", description = "Listado paginado de etiquetas"),
         @ApiResponse(responseCode = "400", description = "Cursor o límite inválido"),
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
+        @ApiResponse(
+                responseCode = "403",
+                description = "Acceso denegado (el grupo no pertenece al usuario)"),
         @ApiResponse(responseCode = "404", description = "Grupo no encontrado")
     })
     public ResponseEntity<KeysetPage<TagResponse>> listGroupTags(
@@ -58,7 +61,7 @@ public class TagController {
             @Parameter(description = "Cursor opaco Base64URL de la página anterior")
                     @RequestParam(required = false)
                     String cursor,
-            @Parameter(description = "Cantidad máxima de elementos por página (1 a 100)")
+            @Parameter(description = "Cantidad máxima de elementos por página (1 a 50)")
                     @RequestParam(defaultValue = "20")
                     int limit) {
         return ResponseEntity.ok(tagService.listGroupTags(groupId, query, cursor, limit));
@@ -76,7 +79,7 @@ public class TagController {
         @ApiResponse(responseCode = "201", description = "Etiqueta creada correctamente"),
         @ApiResponse(
                 responseCode = "400",
-                description = "Error de validación (máx. 25 caracteres, sin comas ni ';')"),
+                description = "Error de validación (1 a 30 caracteres, sin comas ni ';')"),
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
         @ApiResponse(responseCode = "403", description = "Token CSRF ausente o inválido"),
         @ApiResponse(responseCode = "404", description = "Grupo no encontrado"),

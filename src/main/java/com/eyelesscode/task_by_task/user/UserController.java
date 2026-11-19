@@ -76,10 +76,10 @@ public class UserController {
                             + " activas conservando la sesión actual.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Contraseña actualizada correctamente"),
-        @ApiResponse(responseCode = "400", description = "Error de validación"),
         @ApiResponse(
-                responseCode = "401",
-                description = "Usuario no autenticado o contraseña actual incorrecta"),
+                responseCode = "400",
+                description = "Error de validación o contraseña actual incorrecta"),
+        @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
         @ApiResponse(responseCode = "403", description = "Token CSRF ausente o inválido"),
         @ApiResponse(responseCode = "415", description = "Tipo de medio no soportado")
     })
@@ -96,10 +96,10 @@ public class UserController {
                             + " los nuevos códigos en texto plano una única vez.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Códigos regenerados correctamente"),
-        @ApiResponse(responseCode = "400", description = "Error de validación"),
         @ApiResponse(
-                responseCode = "401",
-                description = "Usuario no autenticado o contraseña actual incorrecta"),
+                responseCode = "400",
+                description = "Error de validación o contraseña actual incorrecta"),
+        @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
         @ApiResponse(responseCode = "403", description = "Token CSRF ausente o inválido"),
         @ApiResponse(responseCode = "415", description = "Tipo de medio no soportado")
     })
@@ -116,10 +116,10 @@ public class UserController {
                             + " suscripciones Web Push, trabajos programados y sesiones activas.")
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Cuenta eliminada permanentemente"),
-        @ApiResponse(responseCode = "400", description = "Error de validación"),
         @ApiResponse(
-                responseCode = "401",
-                description = "Usuario no autenticado o contraseña incorrecta"),
+                responseCode = "400",
+                description = "Error de validación o contraseña incorrecta"),
+        @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
         @ApiResponse(responseCode = "403", description = "Token CSRF ausente o inválido"),
         @ApiResponse(responseCode = "415", description = "Tipo de medio no soportado")
     })

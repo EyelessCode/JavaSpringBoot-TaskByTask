@@ -71,6 +71,9 @@ public class TaskController {
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Detalle de la tarea"),
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
+        @ApiResponse(
+                responseCode = "403",
+                description = "Acceso denegado (la tarea no pertenece al usuario)"),
         @ApiResponse(responseCode = "404", description = "Tarea no encontrada")
     })
     public ResponseEntity<TaskResponse> getTask(
@@ -205,9 +208,10 @@ public class TaskController {
     @Operation(
             summary = "Listar tareas del usuario con paginación Keyset y filtros combinados",
             description =
-                    "Orden fijo: `completed ASC` (en `ALL`), `dueDate ASC NULLS LAST`, `createdAt"
-                            + " ASC`, `id ASC`. Permite filtrar por múltiples `groupIds`, estado"
-                            + " (`PENDING`, `COMPLETED`, `ALL`) y búsqueda por texto.")
+                    "Orden fijo: `completed ASC` (en `ALL`), `dueDate ASC NULLS LAST`, `dueTime"
+                            + " ASC NULLS LAST`, `createdAt ASC`, `id ASC`. Permite filtrar por"
+                            + " múltiples `groupIds`, estado (`PENDING`, `COMPLETED`, `ALL`) y"
+                            + " búsqueda parcial insensible a mayúsculas sobre el título.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Listado paginado de tareas"),
         @ApiResponse(responseCode = "400", description = "Cursor, límite o filtro inválido"),
@@ -222,13 +226,16 @@ public class TaskController {
                             example = "PENDING")
                     @RequestParam(defaultValue = "PENDING")
                     TaskStatusFilter status,
-            @Parameter(description = "Texto de búsqueda por título, descripción o etiqueta")
+            @Parameter(
+                            description =
+                                    "Búsqueda parcial insensible a mayúsculas sobre el título de la"
+                                            + " tarea")
                     @RequestParam(required = false)
                     String search,
             @Parameter(description = "Cursor opaco Base64URL de la página anterior")
                     @RequestParam(required = false)
                     String cursor,
-            @Parameter(description = "Cantidad máxima de elementos por página (1 a 100)")
+            @Parameter(description = "Cantidad máxima de elementos por página (1 a 50)")
                     @RequestParam(defaultValue = "20")
                     int limit) {
         return ResponseEntity.ok(taskService.listTasks(groupIds, status, search, cursor, limit));
@@ -241,6 +248,9 @@ public class TaskController {
         @ApiResponse(responseCode = "200", description = "Listado paginado de tareas del grupo"),
         @ApiResponse(responseCode = "400", description = "Cursor, límite o filtro inválido"),
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
+        @ApiResponse(
+                responseCode = "403",
+                description = "Acceso denegado (el grupo no pertenece al usuario)"),
         @ApiResponse(responseCode = "404", description = "Grupo no encontrado")
     })
     public ResponseEntity<KeysetPage<TaskResponse>> listGroupTasks(
@@ -251,13 +261,16 @@ public class TaskController {
                             example = "PENDING")
                     @RequestParam(defaultValue = "PENDING")
                     TaskStatusFilter status,
-            @Parameter(description = "Texto de búsqueda por título, descripción o etiqueta")
+            @Parameter(
+                            description =
+                                    "Búsqueda parcial insensible a mayúsculas sobre el título de la"
+                                            + " tarea")
                     @RequestParam(required = false)
                     String search,
             @Parameter(description = "Cursor opaco Base64URL de la página anterior")
                     @RequestParam(required = false)
                     String cursor,
-            @Parameter(description = "Cantidad máxima de elementos por página (1 a 100)")
+            @Parameter(description = "Cantidad máxima de elementos por página (1 a 50)")
                     @RequestParam(defaultValue = "20")
                     int limit) {
         return ResponseEntity.ok(

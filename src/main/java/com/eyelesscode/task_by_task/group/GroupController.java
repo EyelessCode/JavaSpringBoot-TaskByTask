@@ -66,7 +66,7 @@ public class GroupController {
             @Parameter(description = "Cursor opaco Base64URL de la página anterior")
                     @RequestParam(required = false)
                     String cursor,
-            @Parameter(description = "Cantidad máxima de elementos por página (1 a 100)")
+            @Parameter(description = "Cantidad máxima de elementos por página (1 a 50)")
                     @RequestParam(defaultValue = "20")
                     int limit) {
         return ResponseEntity.ok(groupService.listGroups(cursor, limit));
@@ -78,6 +78,9 @@ public class GroupController {
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Detalle del grupo"),
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
+        @ApiResponse(
+                responseCode = "403",
+                description = "Acceso denegado (el grupo no pertenece al usuario)"),
         @ApiResponse(responseCode = "404", description = "Grupo no encontrado")
     })
     public ResponseEntity<GroupResponse> getGroup(

@@ -144,6 +144,11 @@ public class OpenApiConfig {
                                                             operation.setResponses(responses);
                                                         }
                                                         responses.putIfAbsent(
+                                                                "405",
+                                                                problemResponse(
+                                                                        "Método HTTP no"
+                                                                                + " permitido"));
+                                                        responses.putIfAbsent(
                                                                 "406",
                                                                 problemResponse(
                                                                         "Formato de respuesta no"
@@ -153,6 +158,15 @@ public class OpenApiConfig {
                                                                 problemResponse(
                                                                         "Error interno del"
                                                                                 + " servidor"));
+                                                        responses.forEach(
+                                                                (code, response) -> {
+                                                                    if (code.startsWith("4")
+                                                                            || code.startsWith(
+                                                                                    "5")) {
+                                                                        response.setContent(
+                                                                                problemContent());
+                                                                    }
+                                                                });
                                                     }));
         };
     }
@@ -255,11 +269,16 @@ public class OpenApiConfig {
 
         Schema<?> tagsSchema =
                 new ArraySchema()
-                        .items(new StringSchema().maxLength(25).example("urgente"))
+                        .items(
+                                new StringSchema()
+                                        .minLength(1)
+                                        .maxLength(30)
+                                        .pattern("^[^,;]*$")
+                                        .example("urgente"))
                         .nullable(true)
                         .description(
-                                "Lista completa de etiquetas de la tarea (reemplaza las actuales;"
-                                        + " enviar null o [] para quitar todas)");
+                                "Lista completa de etiquetas de la tarea (1 a 30 caracteres c/u,"
+                                        + " sin comas ni ';'; enviar null o [] para quitar todas)");
 
         ObjectSchema schema = new ObjectSchema();
         schema.setDescription(
@@ -277,17 +296,18 @@ public class OpenApiConfig {
     }
 
     private static ApiResponse problemResponse(String description) {
-        return new ApiResponse()
-                .description(description)
-                .content(
-                        new Content()
-                                .addMediaType(
-                                        PROBLEM_JSON,
-                                        new MediaType()
-                                                .schema(
-                                                        new Schema<>()
-                                                                .$ref(
-                                                                        "#/components/schemas/"
-                                                                                + PROBLEM_DETAIL_SCHEMA_NAME))));
+        return new ApiResponse().description(description).content(problemContent());
+    }
+
+    private static Content problemContent() {
+        return new Content()
+                .addMediaType(
+                        PROBLEM_JSON,
+                        new MediaType()
+                                .schema(
+                                        new Schema<>()
+                                                .$ref(
+                                                        "#/components/schemas/"
+                                                                + PROBLEM_DETAIL_SCHEMA_NAME)));
     }
 }
