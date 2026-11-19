@@ -1,5 +1,7 @@
 HELP.md
 .agents/
+skills-lock.json
+MEMORY.md
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
