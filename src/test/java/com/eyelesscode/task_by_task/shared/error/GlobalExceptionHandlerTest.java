@@ -3,6 +3,7 @@ package com.eyelesscode.task_by_task.shared.error;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -18,6 +19,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.web.servlet.MockMvc;
@@ -25,9 +27,11 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 class GlobalExceptionHandlerTest {
 
@@ -96,6 +100,20 @@ class GlobalExceptionHandlerTest {
 
         @GetMapping("/missing-param")
         void triggerMissingParam(@RequestParam("endpoint") String endpoint) {}
+
+        @GetMapping("/missing-header")
+        void triggerMissingHeader(@RequestHeader("X-Required-Token") String token) {}
+
+        @GetMapping("/no-resource")
+        void triggerNoResource() throws NoResourceFoundException {
+            throw new NoResourceFoundException(
+                    org.springframework.http.HttpMethod.GET, "/test-errors/no-resource", null);
+        }
+
+        @GetMapping(value = "/json-only", produces = MediaType.APPLICATION_JSON_VALUE)
+        SampleRequestDto jsonOnly() {
+            return new SampleRequestDto("ok", 1);
+        }
     }
 
     @Test
@@ -268,5 +286,81 @@ class GlobalExceptionHandlerTest {
                                         "El parámetro 'endpoint' es obligatorio y no puede estar"
                                                 + " vacío"))
                 .andExpect(jsonPath("$.instance").value("/test-errors/missing-param"));
+    }
+
+    @Test
+    @DisplayName("400: ServletRequestBindingException (cabecera faltante) devuelve RFC 7807")
+    void shouldHandleServletRequestBindingException() throws Exception {
+        mockMvc.perform(get("/test-errors/missing-header"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Solicitud inválida"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(
+                        jsonPath("$.detail")
+                                .value(
+                                        "Faltan cabeceras, parámetros o variables obligatorias en"
+                                                + " la solicitud"))
+                .andExpect(jsonPath("$.instance").value("/test-errors/missing-header"));
+    }
+
+    @Test
+    @DisplayName("404: NoResourceFoundException devuelve RFC 7807 en español (HRD-REQ-08)")
+    void shouldHandleNoResourceFoundException() throws Exception {
+        mockMvc.perform(get("/test-errors/no-resource"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.title").value("Recurso no encontrado"))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.detail").value("El recurso solicitado no existe"))
+                .andExpect(jsonPath("$.instance").value("/test-errors/no-resource"));
+    }
+
+    @Test
+    @DisplayName(
+            "405: HttpRequestMethodNotSupportedException devuelve RFC 7807 con cabecera Allow"
+                    + " (HRD-REQ-09)")
+    void shouldHandleMethodNotSupportedWithAllowHeader() throws Exception {
+        mockMvc.perform(delete("/test-errors/validation"))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(header().string(HttpHeaders.ALLOW, containsString("POST")))
+                .andExpect(jsonPath("$.title").value("Método no permitido"))
+                .andExpect(jsonPath("$.status").value(405))
+                .andExpect(
+                        jsonPath("$.detail")
+                                .value("El método HTTP no está soportado para este recurso"))
+                .andExpect(jsonPath("$.instance").value("/test-errors/validation"));
+    }
+
+    @Test
+    @DisplayName(
+            "415: HttpMediaTypeNotSupportedException devuelve RFC 7807 en español (HRD-REQ-10)")
+    void shouldHandleUnsupportedMediaType() throws Exception {
+        mockMvc.perform(
+                        post("/test-errors/validation")
+                                .contentType(MediaType.TEXT_PLAIN)
+                                .content("plain text"))
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.title").value("Tipo de medio no soportado"))
+                .andExpect(jsonPath("$.status").value(415))
+                .andExpect(jsonPath("$.detail").value(containsString("application/json")))
+                .andExpect(jsonPath("$.instance").value("/test-errors/validation"));
+    }
+
+    @Test
+    @DisplayName(
+            "406: HttpMediaTypeNotAcceptableException devuelve RFC 7807 con"
+                    + " application/problem+json (HRD-REQ-11)")
+    void shouldHandleNotAcceptableWithProblemJson() throws Exception {
+        mockMvc.perform(get("/test-errors/json-only").accept(MediaType.APPLICATION_XML))
+                .andExpect(status().isNotAcceptable())
+                .andExpect(
+                        header().string(
+                                        HttpHeaders.CONTENT_TYPE,
+                                        containsString("application/problem+json")))
+                .andExpect(jsonPath("$.title").value("Formato no aceptable"))
+                .andExpect(jsonPath("$.status").value(406))
+                .andExpect(
+                        jsonPath("$.detail")
+                                .value("El formato de respuesta solicitado no está soportado"))
+                .andExpect(jsonPath("$.instance").value("/test-errors/json-only"));
     }
 }

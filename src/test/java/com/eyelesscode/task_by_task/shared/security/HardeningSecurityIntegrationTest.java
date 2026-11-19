@@ -8,6 +8,7 @@ import static org.springframework.security.test.web.servlet.setup.SecurityMockMv
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -319,6 +320,120 @@ class HardeningSecurityIntegrationTest extends AbstractIntegrationTest {
             mockMvc.perform(get("/actuator/beans").with(user("1").roles("USER")))
                     .andExpect(status().isForbidden())
                     .andExpect(jsonPath("$.title").value("Acceso denegado"));
+        }
+    }
+
+    @Nested
+    @DisplayName(
+            "Borde HTTP RFC 7807 (401/404/405/415/406) y Jackson 3 estricto (HRD-REQ-07 a"
+                    + " HRD-REQ-11)")
+    class HttpEdgeAndStrictJsonTests {
+
+        @Test
+        @DisplayName(
+                "Precedencia 401 anónimo vs 404 autenticado en rutas inexistentes (HRD-REQ-08)")
+        void shouldReturn401ForAnonymousAnd404ForAuthenticatedOnUnknownRoute() throws Exception {
+            mockMvc.perform(get("/api/v1/ruta-inexistente"))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(
+                            header().string(
+                                            HttpHeaders.CONTENT_TYPE,
+                                            containsString("application/problem+json")))
+                    .andExpect(jsonPath("$.title").value("No autenticado"))
+                    .andExpect(jsonPath("$.status").value(401));
+
+            mockMvc.perform(get("/api/v1/ruta-inexistente").with(user("1").roles("USER")))
+                    .andExpect(status().isNotFound())
+                    .andExpect(
+                            header().string(
+                                            HttpHeaders.CONTENT_TYPE,
+                                            containsString("application/problem+json")))
+                    .andExpect(jsonPath("$.title").value("Recurso no encontrado"))
+                    .andExpect(jsonPath("$.status").value(404))
+                    .andExpect(jsonPath("$.detail").value("El recurso solicitado no existe"));
+        }
+
+        @Test
+        @DisplayName("Devuelve 405 con Allow, 415 y 406 en RFC 7807 español (HRD-REQ-09..11)")
+        void shouldReturn405And415And406InSpanishProblemDetail() throws Exception {
+            mockMvc.perform(put("/api/v1/users/me").with(user("1").roles("USER")).with(csrf()))
+                    .andExpect(status().isMethodNotAllowed())
+                    .andExpect(header().exists(HttpHeaders.ALLOW))
+                    .andExpect(jsonPath("$.title").value("Método no permitido"))
+                    .andExpect(jsonPath("$.status").value(405));
+
+            mockMvc.perform(
+                            post("/api/v1/groups")
+                                    .with(user("1").roles("USER"))
+                                    .with(csrf())
+                                    .contentType(MediaType.TEXT_PLAIN)
+                                    .content("plain"))
+                    .andExpect(status().isUnsupportedMediaType())
+                    .andExpect(jsonPath("$.title").value("Tipo de medio no soportado"))
+                    .andExpect(jsonPath("$.status").value(415));
+
+            mockMvc.perform(get("/api/v1/auth/csrf").accept(MediaType.APPLICATION_XML))
+                    .andExpect(status().isNotAcceptable())
+                    .andExpect(
+                            header().string(
+                                            HttpHeaders.CONTENT_TYPE,
+                                            containsString("application/problem+json")))
+                    .andExpect(jsonPath("$.title").value("Formato no aceptable"))
+                    .andExpect(jsonPath("$.status").value(406));
+        }
+
+        @Test
+        @DisplayName(
+                "Rechaza coerción escalar con 400 e ignora campos desconocidos en endpoints reales"
+                        + " (HRD-REQ-07)")
+        void shouldRejectScalarCoercionAndIgnoreUnknownFieldsOnRealEndpoints() throws Exception {
+            // Coerción numérica hacia String en register -> 400 Solicitud inválida
+            mockMvc.perform(
+                            post("/api/v1/auth/register")
+                                    .with(csrf())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(
+                                            """
+                                            {
+                                              "email": 12345,
+                                              "username": "CoercionUser",
+                                              "displayName": "Test",
+                                              "password": "Password123"
+                                            }
+                                            """))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.title").value("Solicitud inválida"))
+                    .andExpect(jsonPath("$.status").value(400));
+
+            // Coerción numérica hacia String en creación de grupo -> 400 Solicitud inválida
+            mockMvc.perform(
+                            post("/api/v1/groups")
+                                    .with(user("1").roles("USER"))
+                                    .with(csrf())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content("{\"name\": 999}"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.title").value("Solicitud inválida"))
+                    .andExpect(jsonPath("$.status").value(400));
+
+            // Propiedad desconocida en register -> ignorada (201 Created)
+            mockMvc.perform(
+                            post("/api/v1/auth/register")
+                                    .with(csrf())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(
+                                            """
+                                            {
+                                              "email": "unknownfields@example.com",
+                                              "username": "UnknownFieldsUser",
+                                              "displayName": "Unknown Fields",
+                                              "password": "Password123",
+                                              "timezone": "UTC",
+                                              "extraIgnoredField": "should-be-ignored"
+                                            }
+                                            """))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.user.email").value("unknownfields@example.com"));
         }
     }
 }

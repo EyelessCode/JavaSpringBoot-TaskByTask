@@ -1,8 +1,10 @@
 package com.eyelesscode.task_by_task.user.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record ChangePasswordRequest(
         @NotBlank(message = "La contraseña actual es obligatoria") String currentPassword,
         @NotBlank(message = "La nueva contraseña es obligatoria") @Size(

@@ -69,7 +69,7 @@
     - Añadir pruebas en `AuthLoginLogoutIntegrationTest` (re-hashing transparente y `GET /api/v1/auth/csrf`) y crear `HardeningSecurityIntegrationTest` verificando CORS, cabeceras, CSP, cookies tras proxy HTTPS confiable vs falso, Actuator liveness/readiness/denegación.
   - **Criterio de finalización (Done when):** `./mvnw spotless:check compile test-compile` y `./mvnw test -Dtest=SecurityIntegrationTest,HardeningSecurityIntegrationTest,AuthLoginLogoutIntegrationTest,AuthRegistrationIntegrationTest,AuthPasswordRecoveryIntegrationTest` pasan al 100%.
 
-- [ ] **T4: Deserialización JSON estricta en Jackson 3 (`JacksonConfig` + DTOs) y completitud del contrato RFC 7807 en borde HTTP (`GlobalExceptionHandler`)**
+- [x] **T4: Deserialización JSON estricta en Jackson 3 (`JacksonConfig` + DTOs) y completitud del contrato RFC 7807 en borde HTTP (`GlobalExceptionHandler`)**
   - **Requisitos cubiertos:** HRD-REQ-07, HRD-REQ-08, HRD-REQ-09, HRD-REQ-10, HRD-REQ-11, EC-03, EC-07.
   - **Archivos a crear/modificar:**
     - `src/main/java/com/eyelesscode/task_by_task/shared/config/JacksonConfig.java`

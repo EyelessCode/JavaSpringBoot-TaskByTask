@@ -1,10 +1,12 @@
 package com.eyelesscode.task_by_task.user.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.Locale;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record UpdateProfileRequest(
         @Size(
                         min = 2,
