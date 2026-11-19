@@ -1,5 +1,6 @@
 package com.eyelesscode.task_by_task.auth;
 
+import com.eyelesscode.task_by_task.auth.dto.CsrfTokenResponse;
 import com.eyelesscode.task_by_task.auth.dto.LoginRequest;
 import com.eyelesscode.task_by_task.auth.dto.LogoutRequest;
 import com.eyelesscode.task_by_task.auth.dto.MessageResponse;
@@ -12,6 +13,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,6 +28,15 @@ public class AuthController {
 
     public AuthController(AuthService authService) {
         this.authService = authService;
+    }
+
+    @GetMapping("/csrf")
+    public ResponseEntity<CsrfTokenResponse> csrf(CsrfToken csrfToken) {
+        return ResponseEntity.ok(
+                new CsrfTokenResponse(
+                        csrfToken.getToken(),
+                        csrfToken.getHeaderName(),
+                        csrfToken.getParameterName()));
     }
 
     @PostMapping("/register")

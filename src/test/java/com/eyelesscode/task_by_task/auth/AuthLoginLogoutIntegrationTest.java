@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -24,6 +25,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.test.web.support.WebTestUtils;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.session.Session;
 import org.springframework.session.web.http.SessionRepositoryFilter;
 import org.springframework.test.web.servlet.MockMvc;
@@ -41,6 +46,8 @@ class AuthLoginLogoutIntegrationTest extends AbstractIntegrationTest {
     @Autowired private PushSubscriptionRepository pushSubscriptionRepository;
     @Autowired private RateLimitService rateLimitService;
     @Autowired private JdbcTemplate jdbcTemplate;
+    @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private CookieCsrfTokenRepository cookieCsrfTokenRepository;
     @Autowired private ObjectMapper objectMapper;
 
     private MockMvc mockMvc;
@@ -321,5 +328,79 @@ class AuthLoginLogoutIntegrationTest extends AbstractIntegrationTest {
         assertThat(pushSubscriptionRepository.findAll())
                 .extracting(PushSubscription::getEndpoint)
                 .containsExactly("https://push.example.com/device-2");
+    }
+
+    @Test
+    @DisplayName(
+            "GET /api/v1/auth/csrf emite token y cookie XSRF-TOKEN utilizable en POST"
+                    + " /api/v1/auth/login (HRD-REQ-05)")
+    void shouldBootstrapCsrfTokenAndAllowLoginWithReturnedCookieAndHeader() throws Exception {
+        registerTestUser("csrf@example.com", "CsrfUser", "MySecret123");
+        WebTestUtils.setCsrfTokenRepository(
+                new MockHttpServletRequest(context.getServletContext()), cookieCsrfTokenRepository);
+
+        MvcResult csrfResult =
+                mockMvc.perform(get("/api/v1/auth/csrf"))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.token").isNotEmpty())
+                        .andExpect(jsonPath("$.headerName").value("X-XSRF-TOKEN"))
+                        .andExpect(jsonPath("$.parameterName").value("_csrf"))
+                        .andReturn();
+
+        Cookie xsrfCookie = csrfResult.getResponse().getCookie("XSRF-TOKEN");
+        assertThat(xsrfCookie).isNotNull();
+        assertThat(xsrfCookie.isHttpOnly()).isFalse();
+
+        JsonNode csrfJson = objectMapper.readTree(csrfResult.getResponse().getContentAsString());
+        String token = csrfJson.get("token").asString();
+
+        String loginPayload =
+                """
+                {
+                  "email": "csrf@example.com",
+                  "password": "MySecret123"
+                }
+                """;
+
+        mockMvc.perform(
+                        post("/api/v1/auth/login")
+                                .cookie(xsrfCookie)
+                                .header("X-XSRF-TOKEN", token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(loginPayload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("csrf@example.com"));
+    }
+
+    @Test
+    @DisplayName(
+            "Login re-hashea transparentemente contraseñas cuyo algoritmo requiere actualización"
+                    + " (HRD-REQ-06, FND-REQ-12)")
+    void shouldTransparentlyUpgradePasswordHashOnLogin() throws Exception {
+        Long userId = registerTestUser("upgrade@example.com", "UpgradeUser", "MySecret123");
+
+        User user = userRepository.findById(userId).orElseThrow();
+        user.setPasswordHash("{noop}MySecret123");
+        userRepository.saveAndFlush(user);
+
+        String loginPayload =
+                """
+                {
+                  "email": "upgrade@example.com",
+                  "password": "MySecret123"
+                }
+                """;
+
+        mockMvc.perform(
+                        post("/api/v1/auth/login")
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(loginPayload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("upgrade@example.com"));
+
+        User upgradedUser = userRepository.findById(userId).orElseThrow();
+        assertThat(upgradedUser.getPasswordHash()).startsWith("{bcrypt}");
+        assertThat(passwordEncoder.matches("MySecret123", upgradedUser.getPasswordHash())).isTrue();
     }
 }

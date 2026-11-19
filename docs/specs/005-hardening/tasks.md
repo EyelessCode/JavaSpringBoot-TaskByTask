@@ -48,7 +48,7 @@
     - Crear `TrustedProxyResolverTest`, `TrustedForwardedHeaderFilterTest` y ampliar `RateLimitServiceTest` verificando preservación tras proxy privado (`10.0.0.99`/`127.0.0.1`) y bloqueo de suplantación desde IPs públicas (`203.0.113.77`).
   - **Criterio de finalización (Done when):** `./mvnw spotless:check compile test-compile` y `./mvnw test -Dtest=TrustedProxyResolverTest,TrustedForwardedHeaderFilterTest,RateLimitServiceTest` pasan al 100%.
 
-- [ ] **T3: Endurecimiento HTTP en `SecurityConfig`, CORS, cabeceras defensivas, bootstrap `GET /api/v1/auth/csrf`, política de cookies y `upgradeEncoding` en login**
+- [x] **T3: Endurecimiento HTTP en `SecurityConfig`, CORS, cabeceras defensivas, bootstrap `GET /api/v1/auth/csrf`, política de cookies y `upgradeEncoding` en login**
   - **Requisitos cubiertos:** HRD-REQ-01, HRD-REQ-02, HRD-REQ-04, HRD-REQ-05, HRD-REQ-06, HRD-REQ-12, HRD-REQ-13, HRD-REQ-20, EC-01, EC-02, EC-04, EC-07.
   - **Archivos a crear/modificar:**
     - `src/main/java/com/eyelesscode/task_by_task/auth/dto/CsrfTokenResponse.java`

@@ -167,13 +167,23 @@ public class AuthService {
                     "El correo electrónico o la contraseña son incorrectos");
         }
 
+        String validatedTimezone = null;
         if (request.timezone() != null && !request.timezone().isBlank()) {
-            String validatedTimezone = resolveAndValidateTimezone(request.timezone());
-            if (!validatedTimezone.equals(user.getTimezone())) {
-                user.setTimezone(validatedTimezone);
-                user.setUpdatedAt(dateTimeProvider.now());
-                user = userRepository.save(user);
-            }
+            validatedTimezone = resolveAndValidateTimezone(request.timezone());
+        }
+
+        boolean userUpdated = false;
+        if (passwordEncoder.upgradeEncoding(user.getPasswordHash())) {
+            user.setPasswordHash(passwordEncoder.encode(request.password()));
+            userUpdated = true;
+        }
+        if (validatedTimezone != null && !validatedTimezone.equals(user.getTimezone())) {
+            user.setTimezone(validatedTimezone);
+            userUpdated = true;
+        }
+        if (userUpdated) {
+            user.setUpdatedAt(dateTimeProvider.now());
+            user = userRepository.save(user);
         }
 
         establishAuthenticatedSession(user, httpRequest);
