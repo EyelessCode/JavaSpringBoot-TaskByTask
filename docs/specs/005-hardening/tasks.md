@@ -1,7 +1,7 @@
 # Lista de Tareas: 005-hardening (Endurecimiento de Producción, Contrato OpenAPI y Verificación Final del MVP)
 
 **Fase:** 005-hardening  
-**Estado:** draft  
+**Estado:** completed  
 **Fecha:** 2026-11-18  
 **Autor:** SDD Planner Agent  
 **Referencias:**
@@ -123,7 +123,7 @@
       6. `POST /api/v1/auth/logout` selectivo por `endpoint`, `POST /api/v1/auth/recover-password` con código de un solo uso (invalidación global de sesiones y rechazo de reuso), re-login y `DELETE /api/v1/users/me` verificando 0 filas huérfanas en las 12 tablas de `V1__init_schema.sql`.
   - **Criterio de finalización (Done when):** `./mvnw spotless:check compile test-compile` y `./mvnw test -Dtest=MvpEndToEndJourneyIntegrationTest,NotificationSchedulerIntegrationTest` pasan al 100%.
 
-- [ ] **T7: Auditoría final de alcance MVP, formato Spotless, regresión completa del proyecto y cierre documental (`MEMORY.md`)**
+- [x] **T7: Auditoría final de alcance MVP, formato Spotless, regresión completa del proyecto y cierre documental (`MEMORY.md`)**
   - **Requisitos cubiertos:** HRD-REQ-22, HRD-REQ-23, Constitución Principios 1 a 6.
   - **Archivos a modificar/verificar:**
     - `docs/specs/005-hardening/plan.md` (`**Estado:** completed`)
